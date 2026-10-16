@@ -196,10 +196,11 @@ Test results:
 
 1. **Launch NetSentinel Server**:
    ```bash
-   /home/kali/NetSentinel/scripts/start_netsentinel.sh
+   sudo /home/kali/NetSentinel/scripts/start_netsentinel.sh
    ```
 2. **Access Web Dashboard**:
    Open browser at [http://127.0.0.1:8000](http://127.0.0.1:8000).
+   
 3. **Simulate Lab Traffic**:
    ```bash
    python3 /home/kali/NetSentinel/scripts/simulate_traffic.py
