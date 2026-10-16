@@ -204,3 +204,25 @@ Test results:
    ```bash
    python3 /home/kali/NetSentinel/scripts/simulate_traffic.py
    ```
+
+
+## 12. Easy startup :
+
+```bash
+    # Navigate to the project directory
+    cd /home/abhi/NetSentinel
+
+    # Run the full test suite (20 tests)
+    ./scripts/test_runner.sh
+
+    # Run synthetic threat simulations (e.g., scenario 1: Port Scan, 2: Brute Force)
+    python3 scripts/simulate_traffic.py 1
+    python3 scripts/simulate_traffic.py 2
+
+    # Verify SHA-256 cryptographic audit trail integrity
+    python3 scripts/verify_audit_chain.py
+
+    # Emergency recovery script (flushes rules and restores state if needed)
+    ./scripts/emergency_recover.sh
+```
+
