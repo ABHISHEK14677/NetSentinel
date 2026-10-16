@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NetSentinel - Active Threat Protection & Prevention Engine</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <!-- Top Navigation Bar -->
+    <header class="navbar">
+        <div class="nav-brand">
+            <i class="fa-solid fa-shield-halved brand-icon"></i>
+            <span class="brand-title">NetSentinel</span>
+            <span class="brand-badge">NIDS / NIPS Active Protection</span>
+        </div>
+        <div class="nav-center">
+            <div class="mode-indicator" id="currentModeBadge">
+                <span class="pulse-dot"></span>
+                <span id="currentModeText">MODE A: MONITOR ONLY</span>
+            </div>
+            <div id="dryRunBadge" class="dry-run-badge badge-active">
+                <i class="fa-solid fa-flask"></i> DRY-RUN ACTIVE
+            </div>
+        </div>
+        <div class="nav-controls">
+            <button id="btnToggleDryRun" class="btn btn-secondary">
+                <i class="fa-solid fa-toggle-on"></i> Toggle Dry-Run
+            </button>
+            <button id="btnEmergencyStop" class="btn btn-danger">
+                <i class="fa-solid fa-octagon-exclamation"></i> EMERGENCY STOP
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <div class="main-layout">
+        <!-- Sidebar Controls & Navigation -->
+        <aside class="sidebar">
+            <div class="sidebar-section">
+                <h3><i class="fa-solid fa-sliders"></i> Protection Mode</h3>
+                <div class="mode-selector">
+                    <button class="mode-btn active" data-mode="MONITOR_ONLY" title="Collect events, never alter firewall rules">
+                        <strong>Mode A</strong>
+                        <span>Monitor Only</span>
+                    </button>
+                    <button class="mode-btn" data-mode="ASSISTED_PROTECTION" title="Recommend response, require operator approval">
+                        <strong>Mode B</strong>
+                        <span>Assisted Protection</span>
+                    </button>
+                    <button class="mode-btn" data-mode="AUTOMATIC_TEMPORARY" title="Automatic temporary blocks with mandatory expiry">
+                        <strong>Mode C</strong>
+                        <span>Auto Temporary</span>
+                    </button>
+                    <button class="mode-btn" data-mode="STRICT_PREVENTION" title="Enforce strict boundary prevention policies">
+                        <strong>Mode D</strong>
+                        <span>Strict Prevention</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="sidebar-section">
+                <h3><i class="fa-solid fa-microchip"></i> Hardware Auxiliary</h3>
+                <div class="hw-card" id="esp32StatusCard">
+                    <div class="hw-header">
+                        <i class="fa-solid fa-satellite-dish"></i>
+                        <span>ESP32 Auxiliary Unit</span>
+                        <span id="esp32Badge" class="status-pill status-green">Online</span>
+                    </div>
+                    <div class="hw-details">
+                        <p>Firmware: <span id="esp32Fw">v1.4.2-sec</span></p>
+                        <p>Tamper Sensor: <span id="esp32Tamper" class="text-success">SECURED</span></p>
+                        <p>Heartbeat: <span id="esp32Heartbeat">0.4s ago</span></p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="sidebar-section">
+                <h3><i class="fa-solid fa-vial-circle-check"></i> Lab Threat Simulator</h3>
+                <form id="simulateThreatForm" class="sim-form">
+                    <label>Threat Category</label>
+                    <select id="simCategory">
+                        <option value="PORT_SCAN">Port Scan & Recon</option>
+                        <option value="BRUTE_FORCE">SSH / Auth Brute-Force</option>
+                        <option value="DOS_RATE_ANOMALY">DoS Rate Anomaly</option>
+                        <option value="MALWARE_C2">Malware C2 Communication</option>
+                        <option value="UNAUTHORIZED_DEVICE">Unauthorized Device Discovery</option>
+                        <option value="AI_ANOMALY">AI Anomaly Indicator Only</option>
+                    </select>
+
+                    <label>Target IP</label>
+                    <input type="text" id="simIp" value="198.51.100.77" placeholder="e.g. 198.51.100.77">
+
+                    <label>IDS Severity (0-100)</label>
+                    <input type="number" id="simSeverity" value="85" min="0" max="100">
+
+                    <label>AI Anomaly Score (0-100)</label>
+                    <input type="number" id="simAiScore" value="70" min="0" max="100">
+
+                    <button type="submit" class="btn btn-primary btn-block">
+                        <i class="fa-solid fa-bolt"></i> Ingest Test Event
+                    </button>
+                </form>
+            </div>
+        </aside>
+
+        <!-- Main Dashboard View -->
+        <main class="content-area">
+            <!-- Metric Overview Cards -->
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <div class="metric-icon icon-red"><i class="fa-solid fa-ban"></i></div>
+                    <div class="metric-data">
+                        <h2 id="cntActiveBlocks">0</h2>
+                        <p>Active Firewall Blocks</p>
+                    </div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-icon icon-amber"><i class="fa-solid fa-user-clock"></i></div>
+                    <div class="metric-data">
+                        <h2 id="cntApprovals">0</h2>
+                        <p>Pending Approvals (Mode B)</p>
+                    </div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-icon icon-purple"><i class="fa-solid fa-network-wired"></i></div>
+                    <div class="metric-data">
+                        <h2 id="cntQuarantined">0</h2>
+                        <p>Quarantined Endpoints</p>
+                    </div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-icon icon-green"><i class="fa-solid fa-check-double"></i></div>
+                    <div class="metric-data">
+                        <h2 id="cntVerified">0</h2>
+                        <p>Verified Enforcements</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pending Approvals Banner (Section 14.5 & 14.12) -->
+            <section class="panel-section" id="approvalSection" style="display: none;">
+                <div class="panel-header warning-header">
+                    <h3><i class="fa-solid fa-triangle-exclamation"></i> Action Approval Required (Assisted Mode B)</h3>
+                </div>
+                <div id="approvalRequestsList" class="approval-cards">
+                    <!-- Populated dynamically -->
+                </div>
+            </section>
+
+            <!-- Active Blocks & Temporary Restrictions (Section 14.12) -->
+            <section class="panel-section">
+                <div class="panel-header">
+                    <h3><i class="fa-solid fa-fire-flame-curved"></i> Active Firewall Blocks & Temporary Restrictions</h3>
+                    <span class="panel-subtext">Automatic rollback on expiry or manual release</span>
+                </div>
+                <div class="table-responsive">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Target</th>
+                                <th>Reason / Category</th>
+                                <th>Risk Score</th>
+                                <th>Blocked At</th>
+                                <th>Expires In</th>
+                                <th>Status</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="blockedTargetsTbody">
+                            <tr><td colspan="7" class="text-center text-muted">No active blocks currently applied.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Monitored Device Inventory & Quarantined Endpoints (Section 14.7 & 14.12) -->
+            <div class="split-sections">
+                <section class="panel-section half-section">
+                    <div class="panel-header">
+                        <h3><i class="fa-solid fa-laptop-code"></i> Monitored Devices Inventory</h3>
+                    </div>
+                    <div class="table-responsive small-table">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>IP / Hostname</th>
+                                    <th>MAC Address</th>
+                                    <th>Trust Status</th>
+                                    <th>Risk</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="deviceInventoryTbody">
+                                <tr><td colspan="5" class="text-center text-muted">No LAN devices tracked yet.</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <section class="panel-section half-section">
+                    <div class="panel-header">
+                        <h3><i class="fa-solid fa-shield-virus"></i> Quarantined Devices</h3>
+                    </div>
+                    <div class="table-responsive small-table">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>MAC / IP</th>
+                                    <th>Method</th>
+                                    <th>Enforcement Point</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="quarantinedTbody">
+                                <tr><td colspan="4" class="text-center text-muted">No devices currently in quarantine.</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+            </div>
+
+            <!-- Recent Response Actions & Verification Outcomes (Section 14.11 & 14.12) -->
+            <section class="panel-section">
+                <div class="panel-header">
+                    <h3><i class="fa-solid fa-clock-rotate-left"></i> Response Actions & Verification Lifecycle</h3>
+                    <span class="panel-subtext">Complete audit of execution, verification, and rollback states</span>
+                </div>
+                <div class="table-responsive">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Time</th>
+                                <th>Target</th>
+                                <th>Action Type</th>
+                                <th>Mode</th>
+                                <th>Authorization</th>
+                                <th>Execution</th>
+                                <th>Verification</th>
+                                <th>Rollback</th>
+                            </tr>
+                        </thead>
+                        <tbody id="recentActionsTbody">
+                            <tr><td colspan="8" class="text-center text-muted">No actions recorded.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Allowlisted Protected Assets (Section 14.11) -->
+            <section class="panel-section">
+                <div class="panel-header">
+                    <h3><i class="fa-solid fa-lock"></i> Protected Infrastructure & Allowlist</h3>
+                    <button id="btnAddAllowlist" class="btn btn-sm btn-secondary"><i class="fa-solid fa-plus"></i> Add Asset</button>
+                </div>
+                <div class="allowlist-tags" id="allowlistTags">
+                    <!-- Populated dynamically -->
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Impact Confirmation Modal for Approval (Section 14.12) -->
+    <div id="approvalModal" class="modal-backdrop" style="display: none;">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h3><i class="fa-solid fa-circle-radiation"></i> High-Impact Protective Action Confirmation</h3>
+                <button class="close-modal-btn" onclick="closeApprovalModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p>An operator decision is required before applying blocking or isolation to this target:</p>
+                <div class="preview-box">
+                    <p><strong>Target:</strong> <span id="modalTarget">--</span></p>
+                    <p><strong>Action:</strong> <span id="modalAction">--</span></p>
+                    <p><strong>Risk Score:</strong> <span id="modalRisk">--</span></p>
+                    <p><strong>Proposed Rule:</strong> <code id="modalRule">--</code></p>
+                    <p><strong>Potential Impact:</strong> <span id="modalImpact">--</span></p>
+                    <p><strong>Duration:</strong> <span id="modalDuration">--</span>s</p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="rejectCurrentModal()">Reject Action</button>
+                <button class="btn btn-danger" onclick="approveCurrentModal()">Authorize & Enforce</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/js/app.js"></script>
+</body>
+</html>
