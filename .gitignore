@@ -37,6 +37,10 @@ htmlcov/
 *.db
 *.db-journal
 *.log
+database/*.json
+database/*.pkl
+evidence/
+*.pcap
 
 # IDE
 .vscode/

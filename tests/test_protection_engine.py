@@ -8,9 +8,11 @@ import time
 import os
 import datetime
 
-# Ensure NetSentinel is on sys.path
+# Ensure NetSentinel is on sys.path dynamically
 import sys
-sys.path.insert(0, "/home/kali/NetSentinel")
+_PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if _PROJECT_ROOT not in sys.path:
+    sys.path.insert(0, _PROJECT_ROOT)
 
 from config.config import settings, ProtectionMode, GatewayMode
 from database.db_service import init_db, SessionLocal

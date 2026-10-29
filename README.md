@@ -4,6 +4,68 @@
 
 ---
 
+## 🚀 Quick Start — Run from Anywhere
+
+NetSentinel ships with a **universal launcher** (`netsentinel`) available system-wide. No `cd` required.
+
+```bash
+# Start the server (dashboard → http://localhost:8000)
+netsentinel start
+
+# Or equivalently — default command is 'start'
+netsentinel
+```
+
+### All commands
+
+| Command | Description |
+|---|---|
+| `netsentinel` / `netsentinel start` | Start the server on port 8000 |
+| `netsentinel test` | Run the full pytest suite (26 tests) |
+| `netsentinel simulate <1–6>` | Inject synthetic threat traffic |
+| `netsentinel verify` | Verify SHA-256 audit chain integrity |
+| `netsentinel recover` | Emergency: flush all nftables rules |
+| `netsentinel export` | Dump active nftables ruleset |
+| `netsentinel install-deps` | Install all Python dependencies |
+| `netsentinel help` | Show help screen |
+
+### Simulation scenarios
+
+```bash
+netsentinel simulate 1   # Port Scan
+netsentinel simulate 2   # Brute Force
+netsentinel simulate 3   # DNS Tunneling
+netsentinel simulate 4   # DDoS Flood
+netsentinel simulate 5   # Lateral Movement
+netsentinel simulate 6   # Data Exfiltration
+```
+
+### Individual scripts (also path-agnostic)
+
+```bash
+# From the project directory or anywhere via full path
+./scripts/start_netsentinel.sh      # Start server
+./scripts/test_runner.sh            # Run tests
+./scripts/emergency_recover.sh      # Emergency flush
+./scripts/export_rules_nftables.sh  # Export nftables rules
+python3 scripts/verify_audit_chain.py
+python3 scripts/simulate_traffic.py <1-6>
+```
+
+### Emergency stop (while server is running)
+
+```bash
+# API call
+curl -X POST http://127.0.0.1:8000/api/emergency-stop
+
+# Or click EMERGENCY STOP in the dashboard top navigation bar
+
+# Offline recovery (no server needed)
+netsentinel recover
+```
+
+---
+
 ## 1. System Architecture & Platform Adapters
 
 NetSentinel operates across three deployment profiles with platform-specific response adapters:
@@ -139,10 +201,9 @@ This immediately:
 - Disables automated response actions.
 - **Keeps threat detection and monitoring active.**
 
-### CLI Emergency Recovery Script:
-If the host becomes disconnected or inaccessible, run the offline recovery script:
+### CLI Emergency Recovery (works offline, no server needed):
 ```bash
-/home/kali/NetSentinel/scripts/emergency_recover.sh
+netsentinel recover
 ```
 
 ---
@@ -159,19 +220,25 @@ Tracks LAN endpoints with:
 ## 9. Tamper-Evident Audit Trail (Section 14.13)
 
 Every policy change, firewall enforcement, approval decision, and rollback is recorded in an immutable SQLite database table linked by SHA-256 cryptographic hash chaining:
+
 $$\text{Hash}_n = \text{SHA256}(\text{Hash}_{n-1} \parallel \text{Timestamp} \parallel \text{Operator} \parallel \text{EventType} \parallel \text{Details} \parallel \text{SecretKey})$$
+
 Verify the integrity of the audit log at any time:
 ```bash
+# Via CLI (no server needed)
+netsentinel verify
+
+# Via API (server must be running)
 curl http://127.0.0.1:8000/api/audit/verify
 ```
 
 ---
 
-## 10. Verification Test Suite (Section 14.15)
+## 10. Verification Test Suite (Section 14.15 & BCAST IDS ML)
 
-NetSentinel includes an automated pytest suite validating all 15 acceptance criteria:
+NetSentinel includes an automated pytest suite validating all 15 acceptance criteria, 5 Android ADB tests, and 6 BCAST IDS Machine Learning & Evidence collection tests (26 tests total):
 ```bash
-pytest -v /home/kali/NetSentinel/tests/test_protection_engine.py
+netsentinel test
 ```
 Test results:
 - `test_1_suspicious_event_generates_alert`: PASSED
@@ -189,41 +256,85 @@ Test results:
 - `test_13_emergency_stop_prevents_new_automated_actions`: PASSED
 - `test_14_rollback_restores_expected_previous_state`: PASSED
 - `test_15_failed_enforcement_never_reported_as_successful`: PASSED
+- `test_adb_device_discovery`: PASSED
+- `test_adb_device_identity_extraction`: PASSED
+- `test_adb_device_inventory_registration`: PASSED
+- `test_adb_device_brute_force_attack_and_block`: PASSED
+- `test_adb_device_port_scan_detection`: PASSED
+- `test_bum_feature_vector_normalization`: PASSED
+- `test_mac_and_ip_spoofing_detection`: PASSED
+- `test_ml_engine_status_and_defaults`: PASSED
+- `test_evidence_collector_rotation`: PASSED
+- `test_email_notifier_safeguard`: PASSED
+- `test_system_health_telemetry`: PASSED
 
 ---
 
-## 11. Quick Start
+## 11. Project Structure
 
-1. **Launch NetSentinel Server**:
-   ```bash
-   sudo /home/kali/NetSentinel/scripts/start_netsentinel.sh
-   ```
-2. **Access Web Dashboard**:
-   Open browser at [http://127.0.0.1:8000](http://127.0.0.1:8000).
-   
-3. **Simulate Lab Traffic**:
-   ```bash
-   python3 /home/kali/NetSentinel/scripts/simulate_traffic.py
-   ```
-
-
-## 12. Easy startup :
-
-```bash
-    # Navigate to the project directory
-    cd /home/abhi/NetSentinel
-
-    # Run the full test suite (20 tests)
-    ./scripts/test_runner.sh
-
-    # Run synthetic threat simulations (e.g., scenario 1: Port Scan, 2: Brute Force)
-    python3 scripts/simulate_traffic.py 1
-    python3 scripts/simulate_traffic.py 2
-
-    # Verify SHA-256 cryptographic audit trail integrity
-    python3 scripts/verify_audit_chain.py
-
-    # Emergency recovery script (flushes rules and restores state if needed)
-    ./scripts/emergency_recover.sh
 ```
-
+NetSentinel/
+├── netsentinel.sh               ← Universal launcher (symlinked to ~/.local/bin/netsentinel)
+├── main.py                      # FastAPI application entry point with ML lifecycle
+├── config/config.py             # System configuration, BCAST ML, and SMTP settings
+│
+├── threat_engine/               # Detection, BUM Sniffer & ML subsystem
+│   ├── detector.py              # 11-category threat detector
+│   ├── correlator.py            # Multi-indicator correlation
+│   ├── risk_scorer.py           # 0-100 risk scoring engine
+│   ├── device_inventory.py      # Monitored LAN device inventory
+│   ├── threat_intel.py          # Threat feed freshness validator
+│   ├── packet_capture.py        # Live BUM sniffer (scapy) with 10s windows
+│   ├── feature_extractor.py     # 15 BUM feature extractor & MAC/IP spoofing
+│   └── ml_engine.py             # Isolation Forest anomaly detection & drift monitor
+│
+├── response/                    # Active response subsystem (11-step lifecycle)
+│   ├── response_engine.py
+│   ├── response_policy.py
+│   ├── linux_firewall.py
+│   ├── response_verifier.py
+│   ├── device_quarantine.py
+│   ├── gateway_blocker.py
+│   ├── dns_protection.py
+│   ├── connection_limiter.py
+│   ├── approval_manager.py
+│   ├── rollback_manager.py
+│   ├── audit_logger.py
+│   ├── notification_service.py
+│   ├── email_notifier.py        # Async SMTP alerts with PCAP attachment
+│   ├── evidence_collector.py    # PCAP capture evidence & disk quota cleanup
+│   └── action_registry.py
+│
+├── platforms/                   # Hardware/platform adapters
+│   ├── esp32/                   # ESP32 LED/buzzer alert controller + firmware
+│   ├── raspberry_pi/            # Gateway manager
+│   ├── pc_host/                 # Host-level protector
+│   └── android_adb/             # Android ADB controller
+│
+├── api/                         # REST API
+│   ├── routes.py                # Core control-plane routes
+│   ├── health.py                # Telemetry, evidence & ML inspection routes
+│   └── auth.py
+│
+├── database/                    # SQLite persistence & models
+│   ├── models.py
+│   └── db_service.py
+│
+├── dashboard/                   # Web UI
+│   ├── templates/index.html
+│   └── static/{css,js}
+│
+├── tests/                       # Automated pytest suite (26 tests, 100% PASS)
+│   ├── test_protection_engine.py
+│   ├── test_adb_device.py
+│   └── test_bcast_ids_ml.py
+│
+└── scripts/                     # Individual utility scripts
+    ├── start_netsentinel.sh
+    ├── test_runner.sh
+    ├── simulate_traffic.py
+    ├── verify_audit_chain.py
+    ├── emergency_recover.sh
+    ├── export_rules_nftables.sh
+    └── adb_device_tester.py
+```

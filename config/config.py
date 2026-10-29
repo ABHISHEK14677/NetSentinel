@@ -41,7 +41,10 @@ class Settings(BaseModel):
     emergency_stop_active: bool = False
 
     # Database
-    db_path: str = os.getenv("NETSENTINEL_DB_PATH", "/home/kali/NetSentinel/database/netsentinel.db")
+    db_path: str = os.getenv(
+        "NETSENTINEL_DB_PATH",
+        os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "database", "netsentinel.db")
+    )
     
     # Audit Log Secret Key for HMAC Integrity Chaining
     audit_secret_key: str = os.getenv("NETSENTINEL_AUDIT_SECRET", "netsentinel-tamper-evident-chain-secret-key-2026")
@@ -90,6 +93,41 @@ class Settings(BaseModel):
     monitored_interface: str = "eth0"
     gateway_internal_interface: Optional[str] = "eth1"
     gateway_external_interface: Optional[str] = "eth0"
+
+    # ── Live Packet Capture & ML Engine (BCAST IDS paper) ──────────────────
+    packet_capture_enabled: bool = os.getenv("NETSENTINEL_CAPTURE_ENABLED", "false").lower() == "true"
+    bum_window_seconds: int = 10          # Feature extraction window (paper: 10s)
+    ml_min_training_samples: int = 50     # Min MAC-windows before first train
+    ml_contamination: float = 0.018       # Isolation Forest contamination (~1.8%)
+    ml_drift_threshold: float = 0.15      # Anomaly rate above this triggers retrain
+    ml_model_path: str = os.path.join(
+        os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+        "database", "isolation_forest_model.pkl"
+    )
+
+    # ── Evidence / PCAP Storage ─────────────────────────────────────────────
+    evidence_dir: str = os.path.join(
+        os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "evidence"
+    )
+    evidence_max_disk_gb: float = float(os.getenv("NETSENTINEL_EVIDENCE_MAX_GB", "2.0"))
+
+    # ── Email Alerts ────────────────────────────────────────────────────────
+    smtp_enabled: bool = os.getenv("NETSENTINEL_SMTP_ENABLED", "false").lower() == "true"
+    smtp_host: str = os.getenv("NETSENTINEL_SMTP_HOST", "smtp.gmail.com")
+    smtp_port: int = int(os.getenv("NETSENTINEL_SMTP_PORT", "587"))
+    smtp_user: str = os.getenv("NETSENTINEL_SMTP_USER", "")
+    smtp_password: str = os.getenv("NETSENTINEL_SMTP_PASS", "")
+    smtp_from: str = os.getenv("NETSENTINEL_SMTP_FROM", "netsentinel@localhost")
+    smtp_to: List[str] = Field(
+        default_factory=lambda: [x for x in os.getenv("NETSENTINEL_SMTP_TO", "").split(",") if x]
+    )
+    email_min_severity: str = os.getenv("NETSENTINEL_EMAIL_MIN_SEVERITY", "HIGH")
+
+    # ── ARP Association Snapshot ────────────────────────────────────────────
+    arp_snapshot_path: str = os.path.join(
+        os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+        "database", "arp_associations.json"
+    )
 
 # Global settings instance
 settings = Settings()

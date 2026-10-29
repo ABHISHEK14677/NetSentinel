@@ -19,7 +19,8 @@ if command -v nft >/dev/null 2>&1; then
 fi
 
 echo "[*] Checking NetSentinel database to clear active block records..."
-DB_PATH="/home/kali/NetSentinel/database/netsentinel.db"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+DB_PATH="${NETSENTINEL_DB_PATH:-$(dirname "$SCRIPT_DIR")/database/netsentinel.db}"
 if [ -f "$DB_PATH" ]; then
     sqlite3 "$DB_PATH" "UPDATE blocked_targets SET is_active = 0, unblocked_at = datetime('now'), unblocked_by = 'EMERGENCY_RECOVERY_SCRIPT' WHERE is_active = 1;"
     sqlite3 "$DB_PATH" "UPDATE quarantined_devices SET is_active = 0, released_at = datetime('now'), released_by = 'EMERGENCY_RECOVERY_SCRIPT' WHERE is_active = 1;"
