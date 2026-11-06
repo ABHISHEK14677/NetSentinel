@@ -122,6 +122,74 @@ body {
     border: 1px solid var(--accent-green);
 }
 
+/* ── RISK SCORE BADGES (low, medium, high, critical) ──────────────── */
+.badge-risk-low {
+    background-color: rgba(16, 185, 129, 0.15);
+    color: #34d399;
+    border: 1px solid rgba(16, 185, 129, 0.35);
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.72rem;
+    padding: 0.2rem 0.55rem;
+    border-radius: 4px;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    letter-spacing: 0.5px;
+}
+
+.badge-risk-medium {
+    background-color: rgba(245, 158, 11, 0.15);
+    color: #fbbf24;
+    border: 1px solid rgba(245, 158, 11, 0.35);
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.72rem;
+    padding: 0.2rem 0.55rem;
+    border-radius: 4px;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    letter-spacing: 0.5px;
+}
+
+.badge-risk-high {
+    background-color: rgba(249, 115, 22, 0.18);
+    color: #fb923c;
+    border: 1px solid rgba(249, 115, 22, 0.4);
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.72rem;
+    padding: 0.2rem 0.55rem;
+    border-radius: 4px;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    letter-spacing: 0.5px;
+}
+
+.badge-risk-critical {
+    background-color: rgba(239, 68, 68, 0.2);
+    color: #f87171;
+    border: 1px solid rgba(239, 68, 68, 0.45);
+    font-weight: 700;
+    text-transform: uppercase;
+    font-size: 0.72rem;
+    padding: 0.2rem 0.55rem;
+    border-radius: 4px;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    letter-spacing: 0.5px;
+    box-shadow: 0 0 10px rgba(239, 68, 68, 0.25);
+    animation: pulse-danger 2s infinite ease-in-out;
+}
+
+@keyframes pulse-danger {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.8; }
+}
+
 .nav-controls {
     display: flex;
     gap: 0.75rem;

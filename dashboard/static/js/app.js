@@ -212,6 +212,14 @@ async function triggerEmergencyStop() {
     }
 }
 
+// Helper for Risk Score Level (low, medium, high, critical)
+function getRiskBadge(score, level) {
+    const s = parseFloat(score) || 0;
+    const l = (level || (s < 40 ? "low" : s < 60 ? "medium" : s < 80 ? "high" : "critical")).toLowerCase();
+    const label = l.toUpperCase();
+    return `<span class="badge-risk-${l}">${s} [${label}]</span>`;
+}
+
 async function fetchBlockedTargets() {
     try {
         const res = await fetch("/api/blocked-targets");
@@ -228,7 +236,7 @@ async function fetchBlockedTargets() {
             <tr>
                 <td><strong>${t.target}</strong> (${t.target_type})</td>
                 <td>${t.reason}</td>
-                <td><span class="badge ${t.risk_score >= 80 ? 'badge-danger' : 'badge-warning'}">${t.risk_score}</span></td>
+                <td>${getRiskBadge(t.risk_score, t.risk_level)}</td>
                 <td>${new Date(t.blocked_at).toLocaleTimeString()}</td>
                 <td><i class="fa-regular fa-clock"></i> ${t.seconds_remaining}s</td>
                 <td><span class="status-pill status-green">ACTIVE</span></td>
@@ -271,7 +279,7 @@ async function fetchApprovals() {
             <div class="approval-card" style="background: #252e3e; border: 1px solid #f59e0b; padding: 1rem; border-radius: 6px; margin-bottom: 0.75rem;">
                 <div style="display: flex; justify-content: space-between; align-items: center;">
                     <div>
-                        <strong>Target: ${a.target}</strong> | Action: <code>${a.action_type}</code> | Risk: <span class="badge badge-danger">${a.risk_score}</span>
+                        <strong>Target: ${a.target}</strong> | Action: <code>${a.action_type}</code> | Risk: ${getRiskBadge(a.risk_score, a.risk_level)}
                         <p style="font-size: 0.8rem; color: #9ca3af; margin-top: 0.25rem;">Rule: <code>${a.proposed_rule}</code></p>
                         <p style="font-size: 0.8rem; color: #f59e0b;">Impact: ${a.potential_impact}</p>
                     </div>
@@ -291,7 +299,7 @@ function openApprovalModal(uuid, target, action, risk, ruleEnc, impactEnc, durat
     currentPendingModalUuid = uuid;
     document.getElementById("modalTarget").innerText = target;
     document.getElementById("modalAction").innerText = action;
-    document.getElementById("modalRisk").innerText = risk;
+    document.getElementById("modalRisk").innerHTML = getRiskBadge(risk);
     document.getElementById("modalRule").innerText = decodeURIComponent(ruleEnc);
     document.getElementById("modalImpact").innerText = decodeURIComponent(impactEnc);
     document.getElementById("modalDuration").innerText = duration;
@@ -384,7 +392,7 @@ async function fetchDevices() {
                 <td>${d.ip_address}<br><small class="text-muted">${d.hostname || ''}</small></td>
                 <td><code>${d.mac_address || 'N/A'}</code></td>
                 <td><span class="status-pill ${d.trust_status === 'Trusted' ? 'status-green' : 'status-amber'}">${d.trust_status}</span></td>
-                <td>${d.risk_score}</td>
+                <td>${getRiskBadge(d.risk_score, d.risk_level)}</td>
                 <td>
                     <button class="btn btn-sm btn-secondary" onclick="setDeviceTrusted(${d.id})">Trust</button>
                 </td>
@@ -504,7 +512,9 @@ async function handleThreatSimulation(e) {
             })
         });
         const result = await res.json();
-        alert(`Threat processed:\nScore: ${result.threat_evaluation.risk_score} (${result.threat_evaluation.severity})\nAction: ${result.response_result.action_type || 'NONE'} (${result.response_result.status || result.response_result.outcome_status})`);
+        const te = result.threat_evaluation || {};
+        const riskLevelStr = (te.risk_level || '').toUpperCase() || te.severity || 'N/A';
+        alert(`Threat processed:\nRisk Score: ${te.risk_score} [${riskLevelStr}]\nSeverity: ${te.severity}\nAction: ${result.response_result.action_type || 'NONE'} (${result.response_result.status || result.response_result.outcome_status})`);
         fetchDashboardData();
     } catch (err) {
         alert("Simulation failed: " + err);

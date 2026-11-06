@@ -4,6 +4,7 @@ Implements Section 14.3 Risk Evaluation and Scoring Rules.
 """
 
 from typing import Dict, Any, List, Optional
+from enum import Enum
 from config.config import settings
 from threat_engine.threat_intel import threat_intel_service
 
@@ -13,6 +14,35 @@ class SeverityBand:
     MEDIUM = "Medium"               # 40-59
     HIGH = "High"                   # 60-79
     CRITICAL = "Critical"           # 80-100
+
+class RiskLevel(str, Enum):
+    """
+    Standardized 4-tier risk classification:
+    - low: score 0.0 - 39.9
+    - medium: score 40.0 - 59.9
+    - high: score 60.0 - 79.9
+    - critical: score 80.0 - 100.0
+    """
+    LOW = "low"
+    MEDIUM = "medium"
+    HIGH = "high"
+    CRITICAL = "critical"
+
+    @classmethod
+    def from_score(cls, score: float) -> str:
+        try:
+            s = float(score) if score is not None else 0.0
+        except (ValueError, TypeError):
+            s = 0.0
+
+        if s < 40.0:
+            return cls.LOW.value
+        elif s < 60.0:
+            return cls.MEDIUM.value
+        elif s < 80.0:
+            return cls.HIGH.value
+        else:
+            return cls.CRITICAL.value
 
 class RiskScorer:
     """
@@ -53,6 +83,8 @@ class RiskScorer:
         if is_protected_asset:
             return {
                 "risk_score": 0.0,
+                "risk_level": RiskLevel.LOW.value,
+                "risk_level_name": "Low",
                 "severity": SeverityBand.INFORMATIONAL,
                 "confidence": 1.0,
                 "recommended_action": "NO_ACTION_ALLOWLISTED",
@@ -146,8 +178,13 @@ class RiskScorer:
             else:
                 recommended_action = "ASSISTED_REVIEW_REQUIRED"
 
+        # 7. Standardized 4-tier risk level (low, medium, high, critical)
+        risk_level = RiskLevel.from_score(normalized_score)
+
         return {
             "risk_score": round(normalized_score, 1),
+            "risk_level": risk_level,
+            "risk_level_name": risk_level.capitalize(),
             "severity": severity,
             "confidence": round(confidence, 2),
             "recommended_action": recommended_action,
@@ -164,5 +201,10 @@ class RiskScorer:
                 "is_only_ai_driven": only_ai_driven
             }
         }
+
+    @staticmethod
+    def get_risk_level(score: float) -> str:
+        """Categorizes numerical risk score into (low, medium, high, critical)."""
+        return RiskLevel.from_score(score)
 
 risk_scorer = RiskScorer()

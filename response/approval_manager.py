@@ -11,6 +11,7 @@ from sqlalchemy.orm import Session
 from database.models import ApprovalRequestModel
 from database.db_service import SessionLocal
 from config.config import settings
+from threat_engine.risk_scorer import RiskLevel
 from response.audit_logger import audit_logger
 
 class ApprovalStatus:
@@ -151,6 +152,7 @@ class ApprovalManager:
                     "target": r.target,
                     "action_type": r.action_type,
                     "risk_score": r.risk_score,
+                    "risk_level": RiskLevel.from_score(r.risk_score),
                     "severity": r.severity,
                     "proposed_rule": r.proposed_rule,
                     "potential_impact": r.potential_impact,

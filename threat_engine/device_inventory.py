@@ -8,6 +8,7 @@ from typing import Dict, Any, List, Optional
 from sqlalchemy.orm import Session
 from database.models import DeviceInventoryModel
 from database.db_service import SessionLocal
+from threat_engine.risk_scorer import RiskLevel
 
 class DeviceTrustStatus:
     TRUSTED = "Trusted"
@@ -131,6 +132,7 @@ class DeviceInventoryManager:
                     "observed_protocols": d.observed_protocols,
                     "trust_status": d.trust_status,
                     "risk_score": d.risk_score,
+                    "risk_level": RiskLevel.from_score(d.risk_score),
                     "related_alerts_count": d.related_alerts_count,
                     "current_enforcement_state": d.current_enforcement_state,
                     "notes": d.notes

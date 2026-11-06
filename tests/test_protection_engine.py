@@ -401,3 +401,40 @@ def test_16_operator_login_authentication():
     res_out = client.post("/api/logout?operator=admin")
     assert res_out.status_code == 200
     assert res_out.json()["success"] is True
+
+# ------------------------------------------------------------------------------
+# Test 17: Risk Score Tiers (low, medium, high, critical)
+# ------------------------------------------------------------------------------
+def test_17_risk_score_levels_low_medium_high_critical():
+    """Validates riskscore categorization into (low, medium, high, critical)."""
+    from threat_engine.risk_scorer import RiskLevel, risk_scorer
+
+    assert RiskLevel.from_score(0.0) == "low"
+    assert RiskLevel.from_score(25.0) == "low"
+    assert RiskLevel.from_score(39.9) == "low"
+    assert RiskLevel.from_score(40.0) == "medium"
+    assert RiskLevel.from_score(59.9) == "medium"
+    assert RiskLevel.from_score(60.0) == "high"
+    assert RiskLevel.from_score(79.9) == "high"
+    assert RiskLevel.from_score(80.0) == "critical"
+    assert RiskLevel.from_score(100.0) == "critical"
+
+    # Static helper
+    assert risk_scorer.get_risk_level(20.0) == "low"
+    assert risk_scorer.get_risk_level(50.0) == "medium"
+    assert risk_scorer.get_risk_level(70.0) == "high"
+    assert risk_scorer.get_risk_level(90.0) == "critical"
+
+    # Direct compute_risk test
+    res_low = risk_scorer.compute_risk(category="PORT_SCAN", ids_severity=20.0, event_frequency=1)
+    assert res_low["risk_level"] == "low"
+
+    res_crit = risk_scorer.compute_risk(
+        category="MALWARE_C2",
+        ids_severity=95.0,
+        ai_anomaly_score=95.0,
+        event_frequency=10,
+        correlated_indicators_count=5,
+        confidence=1.0
+    )
+    assert res_crit["risk_level"] == "critical"

@@ -105,6 +105,7 @@ class ThreatDetector:
             "is_multi_indicator": incident.is_multi_indicator,
             "categories_involved": list(incident.categories),
             "risk_score": risk_result["risk_score"],
+            "risk_level": risk_result.get("risk_level", "low"),
             "severity": risk_result["severity"],
             "confidence": risk_result["confidence"],
             "recommended_action": risk_result["recommended_action"],

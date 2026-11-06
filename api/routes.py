@@ -24,6 +24,7 @@ from response.audit_logger import audit_logger
 from response.notification_service import notification_service
 from threat_engine.detector import threat_detector, ThreatCategory
 from threat_engine.device_inventory import device_inventory_manager
+from threat_engine.risk_scorer import RiskLevel
 from platforms.esp32.esp32_controller import esp32_controller
 from platforms.raspberry_pi.gateway_manager import raspberry_pi_manager
 from platforms.pc_host.host_protector import pc_host_protector
@@ -263,6 +264,7 @@ def list_blocked_targets():
                 "target_type": t.target_type,
                 "reason": t.reason,
                 "risk_score": t.risk_score,
+                "risk_level": RiskLevel.from_score(t.risk_score),
                 "blocked_at": t.blocked_at.isoformat() if t.blocked_at else None,
                 "expires_at": t.expires_at.isoformat() if t.expires_at else None,
                 "seconds_remaining": time_left,
@@ -354,6 +356,7 @@ def list_recent_actions(limit: int = 50):
                 "target": a.target,
                 "action_type": a.action_type,
                 "risk_score": a.risk_score,
+                "risk_level": RiskLevel.from_score(a.risk_score) if a.risk_score is not None else "low",
                 "threat_category": a.threat_category,
                 "protection_mode": a.protection_mode,
                 "authorization_status": a.authorization_status,
