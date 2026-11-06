@@ -2,46 +2,90 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>NetSentinel - Active Threat Protection & Prevention Engine</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/static/css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
-    <!-- Secure Operator Login Screen -->
-    <div id="loginScreen" class="login-wrapper">
-        <div class="login-box">
-            <div class="login-header">
-                <i class="fa-solid fa-shield-halved login-icon"></i>
-                <h2>NetSentinel</h2>
-                <p class="login-subtitle">Active Threat Protection & Response Console</p>
-                <div class="login-badge">
-                    <i class="fa-solid fa-lock"></i> SECURE ACCESS REQUIRED
-                </div>
+    <!-- NetSentinel Sign In Screen -->
+    <div id="loginScreen" class="login-shell">
+        <aside class="login-panel">
+            <div class="login-brand">
+                <svg width="30" height="30" viewBox="0 0 32 32" aria-hidden="true">
+                    <path d="M16 2 4 7v8c0 7.5 5 13 12 15 7-2 12-7.5 12-15V7L16 2Z" fill="none" stroke="#CFE3E0" stroke-width="2"/>
+                    <circle cx="16" cy="15" r="4" fill="#F2A33A"/>
+                </svg>
+                NetSentinel
             </div>
+            <div>
+                <h2>Know what’s on your network before it becomes a problem.</h2>
+                <p>Sign in to see devices, traffic and alerts across every site.</p>
+                <svg class="login-map" viewBox="0 0 560 220" role="img" aria-label="Network map with one device flagged">
+                    <g>
+                        <line x1="280" y1="110" x2="110" y2="50"/>
+                        <line x1="280" y1="110" x2="120" y2="170"/>
+                        <line x1="280" y1="110" x2="450" y2="40"/>
+                        <line x1="280" y1="110" x2="470" y2="175"/>
+                        <line x1="110" y1="50" x2="40" y2="110"/>
+                        <line x1="450" y1="40" x2="525" y2="105"/>
+                        <line x1="470" y1="175" x2="400" y2="205"/>
+                        <line x1="120" y1="170" x2="190" y2="205"/>
+                    </g>
+                    <circle class="n" cx="280" cy="110" r="9"/>
+                    <circle class="n" cx="110" cy="50" r="6"/>
+                    <circle class="n" cx="120" cy="170" r="6"/>
+                    <circle class="n" cx="450" cy="40" r="6"/>
+                    <circle class="n" cx="40" cy="110" r="5"/>
+                    <circle class="n" cx="525" cy="105" r="5"/>
+                    <circle class="n" cx="400" cy="205" r="5"/>
+                    <circle class="n" cx="190" cy="205" r="5"/>
+                    <circle class="ring" cx="470" cy="175" r="6"/>
+                    <circle class="hot" cx="470" cy="175" r="7"/>
+                </svg>
+            </div>
+            <div class="login-status" id="loginStatusIndicator">
+                <span class="login-dot"></span>
+                <span id="loginStatusText">All collectors online</span>
+            </div>
+        </aside>
 
-            <form id="loginForm" class="login-form">
-                <div id="loginAlert" class="login-alert" style="display: none;"></div>
-
-                <div class="form-group">
-                    <label for="loginUsername"><i class="fa-solid fa-user-shield"></i> Username</label>
-                    <input type="text" id="loginUsername" class="form-control" placeholder="Enter username" required autocomplete="username" autofocus>
-                </div>
-
-                <div class="form-group">
-                    <label for="loginPassword"><i class="fa-solid fa-key"></i> Password</label>
-                    <input type="password" id="loginPassword" class="form-control" placeholder="Enter password" required autocomplete="current-password">
-                </div>
-
-                <button type="submit" id="btnLoginSubmit" class="btn btn-primary btn-block btn-login">
-                    <i class="fa-solid fa-right-to-bracket"></i> Authenticate & Enter
-                </button>
-
-                <div class="login-footer">
-                    <span class="login-hint"><i class="fa-solid fa-shield-check"></i> Authorized Security Personnel Only</span>
-                </div>
-            </form>
-        </div>
+        <main class="login-main">
+            <div class="login-card">
+                <h1>Sign in</h1>
+                <p class="login-sub">Use your NetSentinel work account.</p>
+                <div id="loginBanner" class="login-banner" role="alert"></div>
+                <form id="loginForm" novalidate>
+                    <div class="login-field">
+                        <label for="loginUsername">Work email</label>
+                        <div class="login-input">
+                            <input id="loginUsername" name="username" type="text" autocomplete="username" placeholder="you@company.com" aria-describedby="loginErrEmail">
+                        </div>
+                        <p id="loginErrEmail" class="login-err">Enter a valid email address or username.</p>
+                    </div>
+                    <div class="login-field">
+                        <label for="loginPassword">Password</label>
+                        <div class="login-input login-pw">
+                            <input id="loginPassword" name="password" type="password" autocomplete="current-password" aria-describedby="loginErrPw">
+                            <button type="button" class="login-toggle" id="btnTogglePassword" aria-controls="loginPassword" aria-pressed="false">Show</button>
+                        </div>
+                        <p id="loginErrPw" class="login-err">Enter your password.</p>
+                    </div>
+                    <div class="login-row">
+                        <label class="login-check">
+                            <input type="checkbox" id="loginRemember" name="remember" checked> Keep me signed in
+                        </label>
+                        <a href="#reset-password" id="linkResetPassword">Reset password</a>
+                    </div>
+                    <button class="login-btn-submit" id="btnLoginSubmit" type="submit">Sign in</button>
+                </form>
+                <div class="login-or">or</div>
+                <button class="login-btn-alt" type="button" id="btnSso">Sign in with company SSO</button>
+                <p class="login-foot">New to NetSentinel? <a href="#request-access" id="linkRequestAccess">Request access</a></p>
+            </div>
+        </main>
     </div>
 
     <!-- Main Dashboard Application Container -->

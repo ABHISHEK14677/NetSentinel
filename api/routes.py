@@ -69,10 +69,13 @@ def login(creds: LoginRequest):
     Authenticates administrative dashboard operator.
     Validates credentials ('admin' / 'wasteoftime') and records audit entry.
     """
-    if creds.username == "admin" and creds.password == "wasteoftime":
+    user_clean = creds.username.strip().lower()
+    user_part = user_clean.split("@")[0] if "@" in user_clean else user_clean
+
+    if (user_clean == "admin" or user_part == "admin") and creds.password == "wasteoftime":
         audit_logger.log_event(
             event_type="LOGIN_SUCCESS",
-            details="Dashboard operator authenticated successfully",
+            details=f"Dashboard operator authenticated successfully as '{creds.username}'",
             result="SUCCESS",
             operator=creds.username
         )

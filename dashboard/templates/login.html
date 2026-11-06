@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Sign in – NetSentinel</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --harbor:#12263F; --harbor-2:#1B3A5C; --glass:#CFE3E0; --signal:#F2A33A;
+  --bg:#F5F8F7; --surface:#FFFFFF; --text:#12263F; --muted:#56687C; --line:#CBD6DD;
+  --accent:#12263F; --accent-text:#FFFFFF; --focus:#1B6FB5; --danger:#B3261E;
+  --display:"Bricolage Grotesque","Segoe UI",system-ui,sans-serif;
+  --body:"IBM Plex Sans","Segoe UI",system-ui,sans-serif;
+  color-scheme:light;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#0D1826; --surface:#142235; --text:#E8EFF3; --muted:#9DB0C1; --line:#2B3E55;
+    --accent:#F2A33A; --accent-text:#12263F; --focus:#7DB8EE; --danger:#FF8A80; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0D1826; --surface:#142235; --text:#E8EFF3; --muted:#9DB0C1; --line:#2B3E55;
+  --accent:#F2A33A; --accent-text:#12263F; --focus:#7DB8EE; --danger:#FF8A80; color-scheme:dark;
+}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;background:var(--bg);color:var(--text);font-family:var(--body);font-size:16px;line-height:1.5}
+.shell{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);min-height:100vh}
+.panel{background:var(--harbor);color:#E8F1F0;padding:48px 56px;display:flex;flex-direction:column;justify-content:space-between;position:relative;overflow:hidden}
+.brand{display:flex;align-items:center;gap:12px;font-family:var(--display);font-weight:700;font-size:22px;letter-spacing:-.01em}
+.brand svg{flex:none}
+.panel h2{font-family:var(--display);font-weight:700;font-size:clamp(30px,3.4vw,46px);line-height:1.08;letter-spacing:-.02em;margin:0 0 14px;max-width:14em}
+.panel p{margin:0;color:#B7CDD0;max-width:30em}
+.map{width:100%;max-width:560px;height:auto;margin:32px 0}
+.map line{stroke:#3B5E82;stroke-width:1.5}
+.map circle.n{fill:var(--glass)}
+.map circle.hot{fill:var(--signal)}
+.map circle.ring{fill:none;stroke:var(--signal);stroke-width:2;transform-box:fill-box;transform-origin:center;animation:ping 2.8s ease-out infinite}
+@keyframes ping{0%{transform:scale(1);opacity:.9}100%{transform:scale(4.2);opacity:0}}
+.status{display:flex;align-items:center;gap:10px;font-size:14px;color:#B7CDD0}
+.dot{width:9px;height:9px;border-radius:50%;background:#6FD3A0;flex:none}
+.main{display:flex;align-items:center;justify-content:center;padding:40px 24px}
+.card{width:100%;max-width:400px}
+.card h1{font-family:var(--display);font-weight:700;font-size:34px;letter-spacing:-.02em;line-height:1.1;margin:0 0 8px}
+.sub{margin:0 0 28px;color:var(--muted)}
+.field{margin-bottom:18px}
+label{display:block;font-weight:500;font-size:14px;margin-bottom:6px}
+.input{position:relative}
+input[type=email],input[type=password],input[type=text]{width:100%;height:46px;padding:0 14px;font:inherit;color:var(--text);background:var(--surface);border:1px solid var(--line);border-radius:8px;outline:none}
+input::placeholder{color:var(--muted);opacity:.8}
+input:focus{border-color:var(--focus);box-shadow:0 0 0 3px rgba(27,111,181,.2)}
+input[aria-invalid="true"]{border-color:var(--danger)}
+.pw input{padding-right:70px}
+.toggle{position:absolute;right:6px;top:6px;height:34px;padding:0 10px;background:none;border:0;border-radius:6px;color:var(--muted);font:inherit;font-size:14px;font-weight:500;cursor:pointer}
+.toggle:hover{color:var(--text)}
+.err{display:none;margin:6px 0 0;font-size:14px;color:var(--danger)}
+.err.on{display:block}
+.row{display:flex;justify-content:space-between;align-items:center;gap:12px;margin:4px 0 22px;font-size:14px}
+.check{display:flex;align-items:center;gap:8px;cursor:pointer}
+.check input{width:18px;height:18px;accent-color:var(--accent);margin:0}
+a{color:var(--text);text-underline-offset:3px}
+.btn{width:100%;height:48px;border:0;border-radius:8px;background:var(--accent);color:var(--accent-text);font:inherit;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.btn:disabled{opacity:.7;cursor:progress}
+.btn.alt{background:transparent;color:var(--text);border:1px solid var(--line);margin-top:12px;font-weight:500}
+.or{display:flex;align-items:center;gap:12px;margin:20px 0 0;color:var(--muted);font-size:14px}
+.or::before,.or::after{content:"";flex:1;height:1px;background:var(--line)}
+.banner{display:none;margin-bottom:20px;padding:12px 14px;border-radius:8px;font-size:14px;border:1px solid var(--line);background:var(--surface);line-height:1.45}
+.banner.on{display:block}
+.banner.bad{border-color:var(--danger);color:var(--danger);background:rgba(179,38,30,.06)}
+.foot{margin-top:28px;font-size:14px;color:var(--muted)}
+:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+@media (max-width:860px){
+  .shell{grid-template-columns:1fr}
+  .panel{padding:28px 24px;min-height:0}
+  .panel h2,.panel p,.map{display:none}
+  .main{align-items:flex-start;padding-top:32px}
+}
+@media (prefers-reduced-motion:reduce){.map circle.ring{animation:none;opacity:.5}}
+</style>
+</head>
+<body>
+<div class="shell">
+  <aside class="panel">
+    <div class="brand">
+      <svg width="30" height="30" viewBox="0 0 32 32" aria-hidden="true"><path d="M16 2 4 7v8c0 7.5 5 13 12 15 7-2 12-7.5 12-15V7L16 2Z" fill="none" stroke="#CFE3E0" stroke-width="2"/><circle cx="16" cy="15" r="4" fill="#F2A33A"/></svg>
+      NetSentinel
+    </div>
+    <div>
+      <h2>Know what’s on your network before it becomes a problem.</h2>
+      <p>Sign in to see devices, traffic and alerts across every site.</p>
+      <svg class="map" viewBox="0 0 560 220" role="img" aria-label="Network map with one device flagged">
+        <g>
+          <line x1="280" y1="110" x2="110" y2="50"/><line x1="280" y1="110" x2="120" y2="170"/>
+          <line x1="280" y1="110" x2="450" y2="40"/><line x1="280" y1="110" x2="470" y2="175"/>
+          <line x1="110" y1="50" x2="40" y2="110"/><line x1="450" y1="40" x2="525" y2="105"/>
+          <line x1="470" y1="175" x2="400" y2="205"/><line x1="120" y1="170" x2="190" y2="205"/>
+        </g>
+        <circle class="n" cx="280" cy="110" r="9"/><circle class="n" cx="110" cy="50" r="6"/>
+        <circle class="n" cx="120" cy="170" r="6"/><circle class="n" cx="450" cy="40" r="6"/>
+        <circle class="n" cx="40" cy="110" r="5"/><circle class="n" cx="525" cy="105" r="5"/>
+        <circle class="n" cx="400" cy="205" r="5"/><circle class="n" cx="190" cy="205" r="5"/>
+        <circle class="ring" cx="470" cy="175" r="6"/><circle class="hot" cx="470" cy="175" r="7"/>
+      </svg>
+    </div>
+    <div class="status" id="statusPill"><span class="dot"></span><span id="statusText">All collectors online</span></div>
+  </aside>
+
+  <main class="main">
+    <div class="card">
+      <h1>Sign in</h1>
+      <p class="sub">Use your NetSentinel work account.</p>
+      <div id="banner" class="banner" role="alert"></div>
+      <form id="f" novalidate>
+        <div class="field">
+          <label for="email">Work email</label>
+          <input id="email" name="email" type="text" autocomplete="username" placeholder="you@company.com" aria-describedby="e1">
+          <p id="e1" class="err">Enter a valid email address or username.</p>
+        </div>
+        <div class="field">
+          <label for="pw">Password</label>
+          <div class="input pw">
+            <input id="pw" name="password" type="password" autocomplete="current-password" aria-describedby="e2">
+            <button type="button" class="toggle" id="tg" aria-controls="pw" aria-pressed="false">Show</button>
+          </div>
+          <p id="e2" class="err">Enter your password.</p>
+        </div>
+        <div class="row">
+          <label class="check" style="margin:0;font-weight:400"><input type="checkbox" id="remember" name="remember" checked> Keep me signed in</label>
+          <a href="#reset-password" id="linkReset">Reset password</a>
+        </div>
+        <button class="btn" id="go" type="submit">Sign in</button>
+      </form>
+      <div class="or">or</div>
+      <button class="btn alt" type="button" id="sso">Sign in with company SSO</button>
+      <p class="foot">New to NetSentinel? <a href="#request-access" id="linkRequest">Request access</a></p>
+    </div>
+  </main>
+</div>
+<script>
+(function(){
+  // Check if already authenticated
+  var existingToken = sessionStorage.getItem("netsentinel_auth") || localStorage.getItem("netsentinel_auth");
+  if(existingToken){
+    window.location.href = "/";
+  }
+
+  var f=document.getElementById('f'), em=document.getElementById('email'), pw=document.getElementById('pw');
+  var e1=document.getElementById('e1'), e2=document.getElementById('e2'), go=document.getElementById('go');
+  var banner=document.getElementById('banner'), tg=document.getElementById('tg');
+  var remember=document.getElementById('remember');
+
+  // Check live collector status
+  fetch('/api/status').then(function(r){ return r.json(); }).then(function(data){
+    var st = document.getElementById('statusText');
+    if(st && data.protection_mode){
+      st.textContent = "All collectors online • Mode: " + data.protection_mode;
+    }
+  }).catch(function(){});
+
+  tg.addEventListener('click',function(){
+    var show=pw.type==='password';
+    pw.type=show?'text':'password';
+    tg.textContent=show?'Hide':'Show';
+    tg.setAttribute('aria-pressed',String(show));
+  });
+
+  function flag(input,msg,bad){
+    input.setAttribute('aria-invalid',bad?'true':'false');
+    msg.classList.toggle('on',bad);
+  }
+
+  async function authenticate(username,password){
+    var res = await fetch("/api/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username: username, password: password })
+    });
+    var data = await res.json();
+    return { ok: res.ok && data.success, data: data };
+  }
+
+  f.addEventListener('submit',function(ev){
+    ev.preventDefault();
+    banner.className='banner';
+    var u = em.value.trim();
+    var p = pw.value;
+    var okEmail = u.length > 0;
+    var okPw = p.length > 0;
+
+    flag(em,e1,!okEmail);
+    flag(pw,e2,!okPw);
+    if(!okEmail){em.focus();return;}
+    if(!okPw){pw.focus();return;}
+
+    go.disabled=true;
+    go.textContent='Signing in…';
+
+    authenticate(u, p).then(function(result){
+      go.disabled=false;
+      go.textContent='Sign in';
+      if(result.ok){
+        sessionStorage.setItem("netsentinel_auth", result.data.token);
+        sessionStorage.setItem("netsentinel_user", result.data.username);
+        if(remember && remember.checked){
+          localStorage.setItem("netsentinel_auth", result.data.token);
+          localStorage.setItem("netsentinel_user", result.data.username);
+        }
+        banner.textContent='Signed in. Redirecting to your dashboard…';
+        banner.className='banner on';
+        setTimeout(function(){
+          window.location.href = "/";
+        }, 500);
+      }else{
+        banner.textContent='That email and password don’t match. Check them and try again (default: admin / wasteoftime), or reset your password.';
+        banner.className='banner on bad';
+      }
+    }).catch(function(){
+      go.disabled=false;
+      go.textContent='Sign in';
+      banner.textContent='Connection error. NetSentinel server is unreachable.';
+      banner.className='banner on bad';
+    });
+  });
+
+  document.getElementById('sso').addEventListener('click',function(){
+    banner.textContent='Connecting to enterprise Single Sign-On (SAML 2.0 / OIDC)...';
+    banner.className='banner on';
+  });
+
+  document.getElementById('linkReset').addEventListener('click',function(e){
+    e.preventDefault();
+    banner.innerHTML='Default credentials: <strong>admin</strong> / <strong>wasteoftime</strong>. To change, edit <code>NETSENTINEL_ADMIN_PASSWORD</code> in your environment.';
+    banner.className='banner on';
+  });
+
+  document.getElementById('linkRequest').addEventListener('click',function(e){
+    e.preventDefault();
+    banner.innerHTML='Operator accounts are provisioned by your security engineering team. Contact your NetSentinel SOC administrator.';
+    banner.className='banner on';
+  });
+})();
+</script>
+</body>
+</html>

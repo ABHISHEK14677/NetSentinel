@@ -368,13 +368,27 @@ def test_16_operator_login_authentication():
 
     client = TestClient(app)
 
-    # Valid credentials
+    # Valid credentials (username)
     res = client.post("/api/login", json={"username": "admin", "password": "wasteoftime"})
     assert res.status_code == 200
     data = res.json()
     assert data["success"] is True
     assert data["username"] == "admin"
     assert "token" in data
+
+    # Valid credentials (work email format)
+    res_email = client.post("/api/login", json={"username": "admin@company.com", "password": "wasteoftime"})
+    assert res_email.status_code == 200
+    assert res_email.json()["success"] is True
+
+    # Login UI endpoints
+    res_login_page = client.get("/login")
+    assert res_login_page.status_code == 200
+    assert "Sign in – NetSentinel" in res_login_page.text
+
+    res_dash_page = client.get("/")
+    assert res_dash_page.status_code == 200
+    assert "loginScreen" in res_dash_page.text
 
     # Invalid credentials
     res_bad = client.post("/api/login", json={"username": "admin", "password": "wrong"})

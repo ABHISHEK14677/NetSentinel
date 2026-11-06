@@ -200,6 +200,12 @@ async def serve_dashboard(request: Request):
     return templates.TemplateResponse(request, "index.html", {"app_name": settings.app_name})
 
 
+@app.get("/login", response_class=HTMLResponse)
+async def serve_login(request: Request):
+    """Renders the NetSentinel Sign In page."""
+    return templates.TemplateResponse(request, "login.html", {"app_name": settings.app_name})
+
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=False)

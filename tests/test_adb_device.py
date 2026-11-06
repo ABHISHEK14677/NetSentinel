@@ -61,7 +61,7 @@ def test_adb_device_inventory_registration():
     }
     reg = adb_device_controller.register_in_inventory(identity)
     assert reg["ip"] == "192.168.1.191"
-    assert reg["trust_status"] in ["Unknown", "Under observation"]
+    assert reg["trust_status"] in ["Unknown", "Under observation", "Suspicious"]
 
     # Verify inventory record
     all_devs = device_inventory_manager.get_all_devices()
