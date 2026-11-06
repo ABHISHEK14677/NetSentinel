@@ -385,10 +385,12 @@ def test_16_operator_login_authentication():
     res_login_page = client.get("/login")
     assert res_login_page.status_code == 200
     assert "Sign in – NetSentinel" in res_login_page.text
+    assert 'value="admin"' in res_login_page.text
+    assert 'value="wasteoftime"' in res_login_page.text
 
     res_dash_page = client.get("/")
     assert res_dash_page.status_code == 200
-    assert "loginScreen" in res_dash_page.text
+    assert "appContainer" in res_dash_page.text
 
     # Invalid credentials
     res_bad = client.post("/api/login", json={"username": "admin", "password": "wrong"})

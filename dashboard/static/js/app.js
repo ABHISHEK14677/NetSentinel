@@ -6,17 +6,14 @@ let dashboardPollInterval = null;
 document.addEventListener("DOMContentLoaded", () => {
     initEventListeners();
     checkAuthState();
-    checkLoginCollectorStatus();
 });
 
 function checkAuthState() {
     const token = sessionStorage.getItem("netsentinel_auth") || localStorage.getItem("netsentinel_auth");
-    const loginScreen = document.getElementById("loginScreen");
     const appContainer = document.getElementById("appContainer");
     const userLabel = document.getElementById("currentLoggedUser");
 
     if (token) {
-        if (loginScreen) loginScreen.style.display = "none";
         if (appContainer) appContainer.style.display = "block";
         if (userLabel) userLabel.innerText = sessionStorage.getItem("netsentinel_user") || localStorage.getItem("netsentinel_user") || "admin";
 
@@ -29,68 +26,11 @@ function checkAuthState() {
             clearInterval(dashboardPollInterval);
             dashboardPollInterval = null;
         }
-        if (appContainer) appContainer.style.display = "none";
-        if (loginScreen) loginScreen.style.display = "grid";
+        window.location.href = "/login";
     }
 }
 
 function initEventListeners() {
-    // Operator Login Form
-    const loginForm = document.getElementById("loginForm");
-    if (loginForm) {
-        loginForm.addEventListener("submit", handleLoginSubmit);
-    }
-
-    // Password Visibility Toggle
-    const tg = document.getElementById("btnTogglePassword");
-    const pw = document.getElementById("loginPassword");
-    if (tg && pw) {
-        tg.addEventListener("click", () => {
-            const show = pw.type === "password";
-            pw.type = show ? "text" : "password";
-            tg.textContent = show ? "Hide" : "Show";
-            tg.setAttribute("aria-pressed", String(show));
-        });
-    }
-
-    // SSO Button
-    const btnSso = document.getElementById("btnSso");
-    if (btnSso) {
-        btnSso.addEventListener("click", () => {
-            const banner = document.getElementById("loginBanner");
-            if (banner) {
-                banner.textContent = "Connecting to enterprise Single Sign-On (SAML 2.0 / OIDC)...";
-                banner.className = "login-banner on";
-            }
-        });
-    }
-
-    // Reset Password Link
-    const linkReset = document.getElementById("linkResetPassword");
-    if (linkReset) {
-        linkReset.addEventListener("click", (e) => {
-            e.preventDefault();
-            const banner = document.getElementById("loginBanner");
-            if (banner) {
-                banner.innerHTML = "Default credentials: <strong>admin</strong> / <strong>wasteoftime</strong>. To change, edit <code>NETSENTINEL_ADMIN_PASSWORD</code> in your environment.";
-                banner.className = "login-banner on";
-            }
-        });
-    }
-
-    // Request Access Link
-    const linkReq = document.getElementById("linkRequestAccess");
-    if (linkReq) {
-        linkReq.addEventListener("click", (e) => {
-            e.preventDefault();
-            const banner = document.getElementById("loginBanner");
-            if (banner) {
-                banner.innerHTML = "Operator accounts are provisioned by your security engineering team. Contact your NetSentinel SOC administrator.";
-                banner.className = "login-banner on";
-            }
-        });
-    }
-
     // Operator Logout Button
     const btnLogout = document.getElementById("btnLogout");
     if (btnLogout) {
@@ -130,105 +70,6 @@ function initEventListeners() {
     }
 }
 
-async function checkLoginCollectorStatus() {
-    const textEl = document.getElementById("loginStatusText");
-    const dotEl = document.querySelector("#loginScreen .login-dot");
-    if (!textEl) return;
-    try {
-        const res = await fetch("/api/status");
-        if (res.ok) {
-            const data = await res.json();
-            const mode = data.protection_mode || "MONITOR_ONLY";
-            textEl.textContent = `All collectors online • Mode: ${mode}`;
-            if (dotEl) dotEl.style.background = "#6FD3A0";
-        }
-    } catch {
-        textEl.textContent = "Sensors offline / Standalone mode";
-        if (dotEl) dotEl.style.background = "#F2A33A";
-    }
-}
-
-async function handleLoginSubmit(e) {
-    e.preventDefault();
-    const usernameInput = document.getElementById("loginUsername");
-    const passwordInput = document.getElementById("loginPassword");
-    const banner = document.getElementById("loginBanner");
-    const submitBtn = document.getElementById("btnLoginSubmit");
-    const errEmail = document.getElementById("loginErrEmail");
-    const errPw = document.getElementById("loginErrPw");
-    const rememberBox = document.getElementById("loginRemember");
-
-    const username = usernameInput ? usernameInput.value.trim() : "";
-    const password = passwordInput ? passwordInput.value : "";
-
-    // Clear previous errors
-    if (banner) { banner.className = "login-banner"; banner.textContent = ""; }
-    if (errEmail) errEmail.classList.remove("on");
-    if (errPw) errPw.classList.remove("on");
-    if (usernameInput) usernameInput.removeAttribute("aria-invalid");
-    if (passwordInput) passwordInput.removeAttribute("aria-invalid");
-
-    const okUser = username.length > 0;
-    const okPw = password.length > 0;
-
-    if (!okUser) {
-        if (usernameInput) usernameInput.setAttribute("aria-invalid", "true");
-        if (errEmail) errEmail.classList.add("on");
-        if (usernameInput) usernameInput.focus();
-        return;
-    }
-    if (!okPw) {
-        if (passwordInput) passwordInput.setAttribute("aria-invalid", "true");
-        if (errPw) errPw.classList.add("on");
-        if (passwordInput) passwordInput.focus();
-        return;
-    }
-
-    submitBtn.disabled = true;
-    submitBtn.textContent = "Signing in…";
-
-    try {
-        const res = await fetch("/api/login", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ username, password })
-        });
-
-        const data = await res.json();
-        if (res.ok && data.success) {
-            const remember = rememberBox && rememberBox.checked;
-            sessionStorage.setItem("netsentinel_auth", data.token);
-            sessionStorage.setItem("netsentinel_user", data.username);
-            if (remember) {
-                localStorage.setItem("netsentinel_auth", data.token);
-                localStorage.setItem("netsentinel_user", data.username);
-            }
-            if (banner) {
-                banner.textContent = "Signed in. Redirecting to your dashboard…";
-                banner.className = "login-banner on";
-            }
-            setTimeout(() => {
-                if (document.getElementById("loginForm")) document.getElementById("loginForm").reset();
-                if (banner) { banner.className = "login-banner"; }
-                checkAuthState();
-            }, 600);
-        } else {
-            if (banner) {
-                banner.textContent = "That email and password don’t match. Check them and try again, or reset your password.";
-                banner.className = "login-banner on bad";
-            }
-        }
-    } catch (err) {
-        if (banner) {
-            banner.textContent = "Connection error. NetSentinel server is unreachable.";
-            banner.className = "login-banner on bad";
-        }
-    } finally {
-        submitBtn.disabled = false;
-        submitBtn.textContent = "Sign in";
-    }
-}
-
 async function handleLogout() {
     const operator = sessionStorage.getItem("netsentinel_user") || localStorage.getItem("netsentinel_user") || "admin";
     try {
@@ -238,6 +79,10 @@ async function handleLogout() {
     }
     sessionStorage.removeItem("netsentinel_auth");
     sessionStorage.removeItem("netsentinel_user");
+    localStorage.removeItem("netsentinel_auth");
+    localStorage.removeItem("netsentinel_user");
+    window.location.href = "/login";
+}
     localStorage.removeItem("netsentinel_auth");
     localStorage.removeItem("netsentinel_user");
     checkAuthState();

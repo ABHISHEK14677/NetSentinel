@@ -51,9 +51,8 @@ body{margin:0;min-height:100vh;background:var(--bg);color:var(--text);font-famil
 .field{margin-bottom:18px}
 label{display:block;font-weight:500;font-size:14px;margin-bottom:6px}
 .input{position:relative}
-input[type=email],input[type=password],input[type=text]{width:100%;height:46px;padding:0 14px;font:inherit;color:var(--text);background:var(--surface);border:1px solid var(--line);border-radius:8px;outline:none}
+input[type=email],input[type=password],input[type=text]{width:100%;height:46px;padding:0 14px;font:inherit;color:var(--text);background:var(--surface);border:1px solid var(--line);border-radius:8px}
 input::placeholder{color:var(--muted);opacity:.8}
-input:focus{border-color:var(--focus);box-shadow:0 0 0 3px rgba(27,111,181,.2)}
 input[aria-invalid="true"]{border-color:var(--danger)}
 .pw input{padding-right:70px}
 .toggle{position:absolute;right:6px;top:6px;height:34px;padding:0 10px;background:none;border:0;border-radius:6px;color:var(--muted);font:inherit;font-size:14px;font-weight:500;cursor:pointer}
@@ -64,14 +63,14 @@ input[aria-invalid="true"]{border-color:var(--danger)}
 .check{display:flex;align-items:center;gap:8px;cursor:pointer}
 .check input{width:18px;height:18px;accent-color:var(--accent);margin:0}
 a{color:var(--text);text-underline-offset:3px}
-.btn{width:100%;height:48px;border:0;border-radius:8px;background:var(--accent);color:var(--accent-text);font:inherit;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.btn{width:100%;height:48px;border:0;border-radius:8px;background:var(--accent);color:var(--accent-text);font:inherit;font-weight:600;cursor:pointer}
 .btn:disabled{opacity:.7;cursor:progress}
 .btn.alt{background:transparent;color:var(--text);border:1px solid var(--line);margin-top:12px;font-weight:500}
 .or{display:flex;align-items:center;gap:12px;margin:20px 0 0;color:var(--muted);font-size:14px}
 .or::before,.or::after{content:"";flex:1;height:1px;background:var(--line)}
-.banner{display:none;margin-bottom:20px;padding:12px 14px;border-radius:8px;font-size:14px;border:1px solid var(--line);background:var(--surface);line-height:1.45}
+.banner{display:none;margin-bottom:20px;padding:12px 14px;border-radius:8px;font-size:14px;border:1px solid var(--line);background:var(--surface)}
 .banner.on{display:block}
-.banner.bad{border-color:var(--danger);color:var(--danger);background:rgba(179,38,30,.06)}
+.banner.bad{border-color:var(--danger);color:var(--danger)}
 .foot{margin-top:28px;font-size:14px;color:var(--muted)}
 :focus-visible{outline:3px solid var(--focus);outline-offset:2px}
 @media (max-width:860px){
@@ -107,7 +106,7 @@ a{color:var(--text);text-underline-offset:3px}
         <circle class="ring" cx="470" cy="175" r="6"/><circle class="hot" cx="470" cy="175" r="7"/>
       </svg>
     </div>
-    <div class="status" id="statusPill"><span class="dot"></span><span id="statusText">All collectors online</span></div>
+    <div class="status"><span class="dot"></span>All collectors online</div>
   </aside>
 
   <main class="main">
@@ -118,49 +117,41 @@ a{color:var(--text);text-underline-offset:3px}
       <form id="f" novalidate>
         <div class="field">
           <label for="email">Work email</label>
-          <input id="email" name="email" type="text" autocomplete="username" placeholder="you@company.com" aria-describedby="e1">
+          <input id="email" name="email" type="text" autocomplete="username" value="admin" placeholder="admin" aria-describedby="e1">
           <p id="e1" class="err">Enter a valid email address or username.</p>
         </div>
         <div class="field">
           <label for="pw">Password</label>
           <div class="input pw">
-            <input id="pw" name="password" type="password" autocomplete="current-password" aria-describedby="e2">
+            <input id="pw" name="password" type="password" autocomplete="current-password" value="wasteoftime" placeholder="wasteoftime" aria-describedby="e2">
             <button type="button" class="toggle" id="tg" aria-controls="pw" aria-pressed="false">Show</button>
           </div>
           <p id="e2" class="err">Enter your password.</p>
         </div>
         <div class="row">
           <label class="check" style="margin:0;font-weight:400"><input type="checkbox" id="remember" name="remember" checked> Keep me signed in</label>
-          <a href="#reset-password" id="linkReset">Reset password</a>
+          <a href="#forgot" id="btnForgot">Reset password</a>
         </div>
         <button class="btn" id="go" type="submit">Sign in</button>
       </form>
       <div class="or">or</div>
       <button class="btn alt" type="button" id="sso">Sign in with company SSO</button>
-      <p class="foot">New to NetSentinel? <a href="#request-access" id="linkRequest">Request access</a></p>
+      <p class="foot">New to NetSentinel? <a href="#request-access" id="btnRequest">Request access</a></p>
     </div>
   </main>
 </div>
 <script>
 (function(){
-  // Check if already authenticated
+  // If already logged in, redirect to dashboard
   var existingToken = sessionStorage.getItem("netsentinel_auth") || localStorage.getItem("netsentinel_auth");
-  if(existingToken){
+  if (existingToken) {
     window.location.href = "/";
   }
 
   var f=document.getElementById('f'), em=document.getElementById('email'), pw=document.getElementById('pw');
   var e1=document.getElementById('e1'), e2=document.getElementById('e2'), go=document.getElementById('go');
   var banner=document.getElementById('banner'), tg=document.getElementById('tg');
-  var remember=document.getElementById('remember');
-
-  // Check live collector status
-  fetch('/api/status').then(function(r){ return r.json(); }).then(function(data){
-    var st = document.getElementById('statusText');
-    if(st && data.protection_mode){
-      st.textContent = "All collectors online • Mode: " + data.protection_mode;
-    }
-  }).catch(function(){});
+  var rem=document.getElementById('remember');
 
   tg.addEventListener('click',function(){
     var show=pw.type==='password';
@@ -169,19 +160,20 @@ a{color:var(--text);text-underline-offset:3px}
     tg.setAttribute('aria-pressed',String(show));
   });
 
-  function flag(input,msg,bad){
-    input.setAttribute('aria-invalid',bad?'true':'false');
-    msg.classList.toggle('on',bad);
-  }
+  function flag(input,msg,bad){ input.setAttribute('aria-invalid',bad?'true':'false'); msg.classList.toggle('on',bad); }
 
-  async function authenticate(username,password){
-    var res = await fetch("/api/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ username: username, password: password })
-    });
-    var data = await res.json();
-    return { ok: res.ok && data.success, data: data };
+  async function authenticate(username, password){
+    try {
+      var res = await fetch("/api/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username: username, password: password })
+      });
+      var data = await res.json();
+      return { ok: res.ok && data.success, data: data };
+    } catch(err) {
+      return { ok: false, error: err };
+    }
   }
 
   f.addEventListener('submit',function(ev){
@@ -189,58 +181,48 @@ a{color:var(--text);text-underline-offset:3px}
     banner.className='banner';
     var u = em.value.trim();
     var p = pw.value;
-    var okEmail = u.length > 0;
+    var okUser = u.length > 0;
     var okPw = p.length > 0;
-
-    flag(em,e1,!okEmail);
-    flag(pw,e2,!okPw);
-    if(!okEmail){em.focus();return;}
+    flag(em,e1,!okUser); flag(pw,e2,!okPw);
+    if(!okUser){em.focus();return;}
     if(!okPw){pw.focus();return;}
-
-    go.disabled=true;
-    go.textContent='Signing in…';
-
-    authenticate(u, p).then(function(result){
-      go.disabled=false;
-      go.textContent='Sign in';
-      if(result.ok){
-        sessionStorage.setItem("netsentinel_auth", result.data.token);
-        sessionStorage.setItem("netsentinel_user", result.data.username);
-        if(remember && remember.checked){
-          localStorage.setItem("netsentinel_auth", result.data.token);
-          localStorage.setItem("netsentinel_user", result.data.username);
+    go.disabled=true; go.textContent='Signing in…';
+    authenticate(u, p).then(function(r){
+      go.disabled=false; go.textContent='Sign in';
+      if(r.ok){
+        sessionStorage.setItem("netsentinel_auth", r.data.token);
+        sessionStorage.setItem("netsentinel_user", r.data.username);
+        if(rem && rem.checked){
+          localStorage.setItem("netsentinel_auth", r.data.token);
+          localStorage.setItem("netsentinel_user", r.data.username);
         }
         banner.textContent='Signed in. Redirecting to your dashboard…';
         banner.className='banner on';
         setTimeout(function(){
           window.location.href = "/";
-        }, 500);
+        }, 350);
       }else{
-        banner.textContent='That email and password don’t match. Check them and try again (default: admin / wasteoftime), or reset your password.';
+        banner.textContent='That email/username and password don’t match. Check them and try again (default: admin / wasteoftime), or reset your password.';
         banner.className='banner on bad';
       }
     }).catch(function(){
-      go.disabled=false;
-      go.textContent='Sign in';
-      banner.textContent='Connection error. NetSentinel server is unreachable.';
+      go.disabled=false; go.textContent='Sign in';
+      banner.textContent='Connection error. NetSentinel server is offline.';
       banner.className='banner on bad';
     });
   });
 
   document.getElementById('sso').addEventListener('click',function(){
-    banner.textContent='Connecting to enterprise Single Sign-On (SAML 2.0 / OIDC)...';
+    banner.textContent='Redirecting to your company SSO (SAML 2.0 / OIDC)…'; banner.className='banner on';
+  });
+  document.getElementById('btnForgot').addEventListener('click',function(e){
+    e.preventDefault();
+    banner.innerHTML='Default credentials: <strong>admin</strong> / <strong>wasteoftime</strong>. To change, edit <code>NETSENTINEL_ADMIN_PASSWORD</code>.';
     banner.className='banner on';
   });
-
-  document.getElementById('linkReset').addEventListener('click',function(e){
+  document.getElementById('btnRequest').addEventListener('click',function(e){
     e.preventDefault();
-    banner.innerHTML='Default credentials: <strong>admin</strong> / <strong>wasteoftime</strong>. To change, edit <code>NETSENTINEL_ADMIN_PASSWORD</code> in your environment.';
-    banner.className='banner on';
-  });
-
-  document.getElementById('linkRequest').addEventListener('click',function(e){
-    e.preventDefault();
-    banner.innerHTML='Operator accounts are provisioned by your security engineering team. Contact your NetSentinel SOC administrator.';
+    banner.innerHTML='Operator accounts are provisioned by your security engineering team. Contact your NetSentinel administrator.';
     banner.className='banner on';
   });
 })();
