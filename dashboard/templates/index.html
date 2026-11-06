@@ -7,8 +7,11 @@
     <link rel="stylesheet" href="/static/css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script>
-        if (!sessionStorage.getItem("netsentinel_auth") && !localStorage.getItem("netsentinel_auth")) {
-            window.location.href = "/login";
+        // Enforce login requirement on every startup
+        localStorage.removeItem("netsentinel_auth");
+        localStorage.removeItem("netsentinel_user");
+        if (!sessionStorage.getItem("netsentinel_auth")) {
+            window.location.replace("/login");
         }
     </script>
 </head>

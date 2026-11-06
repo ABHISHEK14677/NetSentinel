@@ -397,10 +397,23 @@ def test_16_operator_login_authentication():
     assert res_bad.status_code == 401
     assert "Invalid username" in res_bad.json()["detail"]
 
-    # Logout
-    res_out = client.post("/api/logout?operator=admin")
+    # Session verification endpoint
+    token = data["token"]
+    res_verify = client.get("/api/session/verify", headers={"Authorization": f"Bearer {token}"})
+    assert res_verify.status_code == 200
+    assert res_verify.json()["valid"] is True
+
+    res_verify_bad = client.get("/api/session/verify", headers={"Authorization": "Bearer invalid-token"})
+    assert res_verify_bad.status_code == 401
+
+    # Logout and revoke token
+    res_out = client.post("/api/logout?operator=admin", headers={"Authorization": f"Bearer {token}"})
     assert res_out.status_code == 200
     assert res_out.json()["success"] is True
+
+    # Token must be revoked after logout
+    res_verify_revoked = client.get("/api/session/verify", headers={"Authorization": f"Bearer {token}"})
+    assert res_verify_revoked.status_code == 401
 
 # ------------------------------------------------------------------------------
 # Test 17: Risk Score Tiers (low, medium, high, critical)

@@ -8,25 +8,46 @@ document.addEventListener("DOMContentLoaded", () => {
     checkAuthState();
 });
 
-function checkAuthState() {
-    const token = sessionStorage.getItem("netsentinel_auth") || localStorage.getItem("netsentinel_auth");
+// Clean out any legacy persistent tokens to enforce startup login
+localStorage.removeItem("netsentinel_auth");
+localStorage.removeItem("netsentinel_user");
+
+async function checkAuthState() {
+    const token = sessionStorage.getItem("netsentinel_auth");
     const appContainer = document.getElementById("appContainer");
     const userLabel = document.getElementById("currentLoggedUser");
 
-    if (token) {
-        if (appContainer) appContainer.style.display = "block";
-        if (userLabel) userLabel.innerText = sessionStorage.getItem("netsentinel_user") || localStorage.getItem("netsentinel_user") || "admin";
-
-        fetchDashboardData();
-        if (!dashboardPollInterval) {
-            dashboardPollInterval = setInterval(fetchDashboardData, 3000);
-        }
-    } else {
+    if (!token) {
         if (dashboardPollInterval) {
             clearInterval(dashboardPollInterval);
             dashboardPollInterval = null;
         }
-        window.location.href = "/login";
+        window.location.replace("/login");
+        return;
+    }
+
+    // Verify session validity against current server startup instance
+    try {
+        const res = await fetch("/api/session/verify", {
+            headers: { "Authorization": `Bearer ${token}` }
+        });
+        if (!res.ok) {
+            sessionStorage.clear();
+            window.location.replace("/login?reason=restarted");
+            return;
+        }
+        const data = await res.json();
+        sessionStorage.setItem("netsentinel_boot_id", data.server_boot_id);
+    } catch (e) {
+        console.warn("Session verification check network error:", e);
+    }
+
+    if (appContainer) appContainer.style.display = "block";
+    if (userLabel) userLabel.innerText = sessionStorage.getItem("netsentinel_user") || "admin";
+
+    fetchDashboardData();
+    if (!dashboardPollInterval) {
+        dashboardPollInterval = setInterval(fetchDashboardData, 3000);
     }
 }
 
@@ -71,29 +92,43 @@ function initEventListeners() {
 }
 
 async function handleLogout() {
-    const operator = sessionStorage.getItem("netsentinel_user") || localStorage.getItem("netsentinel_user") || "admin";
+    const operator = sessionStorage.getItem("netsentinel_user") || "admin";
+    const token = sessionStorage.getItem("netsentinel_auth");
     try {
-        await fetch(`/api/logout?operator=${encodeURIComponent(operator)}`, { method: "POST" });
+        await fetch(`/api/logout?operator=${encodeURIComponent(operator)}`, {
+            method: "POST",
+            headers: token ? { "Authorization": `Bearer ${token}` } : {}
+        });
     } catch (e) {
         console.warn("Logout notification failed:", e);
     }
-    sessionStorage.removeItem("netsentinel_auth");
-    sessionStorage.removeItem("netsentinel_user");
-    localStorage.removeItem("netsentinel_auth");
-    localStorage.removeItem("netsentinel_user");
-    window.location.href = "/login";
-}
-    localStorage.removeItem("netsentinel_auth");
-    localStorage.removeItem("netsentinel_user");
-    checkAuthState();
-    checkLoginCollectorStatus();
+    sessionStorage.clear();
+    localStorage.clear();
+    window.location.replace("/login");
 }
 
 async function fetchDashboardData() {
+    const token = sessionStorage.getItem("netsentinel_auth");
     try {
-        const res = await fetch("/api/status");
+        const res = await fetch("/api/status", {
+            headers: token ? { "Authorization": `Bearer ${token}` } : {}
+        });
+        if (res.status === 401) {
+            sessionStorage.clear();
+            window.location.replace("/login?reason=restarted");
+            return;
+        }
         if (!res.ok) return;
         const data = await res.json();
+
+        // Check if server was restarted during active dashboard poll
+        const currentBoot = sessionStorage.getItem("netsentinel_boot_id");
+        if (currentBoot && data.server_boot_id && currentBoot !== data.server_boot_id) {
+            sessionStorage.clear();
+            window.location.replace("/login?reason=restarted");
+            return;
+        }
+
         updateUIStatus(data);
 
         // Fetch sub-panels

@@ -5,7 +5,7 @@ Provides full control plane for Active Protection, Policy Management, Approvals,
 
 import time
 import datetime
-from fastapi import APIRouter, HTTPException, Depends, Query, Body
+from fastapi import APIRouter, HTTPException, Depends, Query, Body, Header
 from pydantic import BaseModel, Field
 from typing import Dict, Any, List, Optional
 
@@ -28,7 +28,10 @@ from threat_engine.risk_scorer import RiskLevel
 from platforms.esp32.esp32_controller import esp32_controller
 from platforms.raspberry_pi.gateway_manager import raspberry_pi_manager
 from platforms.pc_host.host_protector import pc_host_protector
-from api.auth import verify_api_token
+from api.auth import (
+    verify_api_token, SERVER_BOOT_ID, SERVER_STARTUP_TIME,
+    create_session_token, revoke_session_token, is_valid_session_token
+)
 
 router = APIRouter(prefix="/api", tags=["Active Protection"])
 
@@ -68,12 +71,14 @@ class LoginRequest(BaseModel):
 def login(creds: LoginRequest):
     """
     Authenticates administrative dashboard operator.
-    Validates credentials ('admin' / 'wasteoftime') and records audit entry.
+    Validates credentials ('admin' / 'wasteoftime') and issues an instance-bound session token.
+    Every server restart requires a fresh login.
     """
     user_clean = creds.username.strip().lower()
     user_part = user_clean.split("@")[0] if "@" in user_clean else user_clean
 
     if (user_clean == "admin" or user_part == "admin") and creds.password == "wasteoftime":
+        session_token = create_session_token(creds.username)
         audit_logger.log_event(
             event_type="LOGIN_SUCCESS",
             details=f"Dashboard operator authenticated successfully as '{creds.username}'",
@@ -82,8 +87,9 @@ def login(creds: LoginRequest):
         )
         return {
             "success": True,
-            "token": "netsentinel-admin-token-2026",
+            "token": session_token,
             "username": "admin",
+            "server_boot_id": SERVER_BOOT_ID,
             "message": "Authentication successful"
         }
 
@@ -99,8 +105,10 @@ def login(creds: LoginRequest):
     )
 
 @router.post("/logout")
-def logout(operator: Optional[str] = Query("admin")):
-    """Records operator logout event in the audit trail."""
+def logout(operator: Optional[str] = Query("admin"), authorization: Optional[str] = Header(None)):
+    """Records operator logout event in the audit trail and revokes active session."""
+    if authorization:
+        revoke_session_token(authorization)
     audit_logger.log_event(
         event_type="LOGOUT",
         details=f"Dashboard operator '{operator}' logged out",
@@ -108,6 +116,23 @@ def logout(operator: Optional[str] = Query("admin")):
         operator=operator or "admin"
     )
     return {"success": True, "message": "Logged out successfully"}
+
+@router.get("/session/verify")
+def verify_session_endpoint(authorization: Optional[str] = Header(None)):
+    """
+    Verifies that the active session token belongs to the current server startup instance.
+    Every server restart invalidates previous sessions.
+    """
+    if authorization and is_valid_session_token(authorization):
+        return {
+            "valid": True,
+            "server_boot_id": SERVER_BOOT_ID,
+            "uptime_seconds": round(time.time() - SERVER_STARTUP_TIME, 1)
+        }
+    raise HTTPException(
+        status_code=401,
+        detail="Session invalid or server was restarted. Every startup requires login."
+    )
 
 @router.get("/status")
 def get_system_status():
@@ -132,6 +157,7 @@ def get_system_status():
             "emergency_stop_active": settings.emergency_stop_active,
             "platform": settings.platform.value,
             "gateway_mode": settings.gateway_mode.value,
+            "server_boot_id": SERVER_BOOT_ID,
             "counts": {
                 "active_blocks": active_blocks,
                 "quarantined_devices": quarantined,

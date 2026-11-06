@@ -142,16 +142,36 @@ a{color:var(--text);text-underline-offset:3px}
 </div>
 <script>
 (function(){
-  // If already logged in, redirect to dashboard
-  var existingToken = sessionStorage.getItem("netsentinel_auth") || localStorage.getItem("netsentinel_auth");
+  // Clear any persistent local storage to enforce fresh login on every startup
+  localStorage.removeItem("netsentinel_auth");
+  localStorage.removeItem("netsentinel_user");
+
+  var banner=document.getElementById('banner');
+
+  // Display notice if redirected due to server startup or expired session
+  var params = new URLSearchParams(window.location.search);
+  if (params.get("reason") === "restarted" && banner) {
+    banner.textContent = "NetSentinel server restarted or session expired. Please sign in.";
+    banner.className = "banner on";
+  }
+
+  // If active session token exists in this browser tab, verify before redirecting
+  var existingToken = sessionStorage.getItem("netsentinel_auth");
   if (existingToken) {
-    window.location.href = "/";
+    fetch("/api/session/verify", {
+      headers: { "Authorization": "Bearer " + existingToken }
+    }).then(function(res){
+      if(res.ok){
+        window.location.replace("/");
+      } else {
+        sessionStorage.clear();
+      }
+    }).catch(function(){});
   }
 
   var f=document.getElementById('f'), em=document.getElementById('email'), pw=document.getElementById('pw');
   var e1=document.getElementById('e1'), e2=document.getElementById('e2'), go=document.getElementById('go');
-  var banner=document.getElementById('banner'), tg=document.getElementById('tg');
-  var rem=document.getElementById('remember');
+  var tg=document.getElementById('tg');
 
   tg.addEventListener('click',function(){
     var show=pw.type==='password';
@@ -190,17 +210,17 @@ a{color:var(--text);text-underline-offset:3px}
     authenticate(u, p).then(function(r){
       go.disabled=false; go.textContent='Sign in';
       if(r.ok){
+        // Store in sessionStorage ONLY (destroyed on browser close or logout)
         sessionStorage.setItem("netsentinel_auth", r.data.token);
         sessionStorage.setItem("netsentinel_user", r.data.username);
-        if(rem && rem.checked){
-          localStorage.setItem("netsentinel_auth", r.data.token);
-          localStorage.setItem("netsentinel_user", r.data.username);
+        if(r.data.server_boot_id) {
+          sessionStorage.setItem("netsentinel_boot_id", r.data.server_boot_id);
         }
         banner.textContent='Signed in. Redirecting to your dashboard…';
         banner.className='banner on';
         setTimeout(function(){
-          window.location.href = "/";
-        }, 350);
+          window.location.replace("/");
+        }, 300);
       }else{
         banner.textContent='That email/username and password don’t match. Check them and try again (default: admin / wasteoftime), or reset your password.';
         banner.className='banner on bad';
