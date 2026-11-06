@@ -59,6 +59,52 @@ class AllowlistAssetRequest(BaseModel):
     description: str
     is_essential: bool = False
 
+class LoginRequest(BaseModel):
+    username: str
+    password: str
+
+@router.post("/login")
+def login(creds: LoginRequest):
+    """
+    Authenticates administrative dashboard operator.
+    Validates credentials ('admin' / 'wasteoftime') and records audit entry.
+    """
+    if creds.username == "admin" and creds.password == "wasteoftime":
+        audit_logger.log_event(
+            event_type="LOGIN_SUCCESS",
+            details="Dashboard operator authenticated successfully",
+            result="SUCCESS",
+            operator=creds.username
+        )
+        return {
+            "success": True,
+            "token": "netsentinel-admin-token-2026",
+            "username": "admin",
+            "message": "Authentication successful"
+        }
+
+    audit_logger.log_event(
+        event_type="LOGIN_FAILED",
+        details=f"Invalid dashboard authentication attempt for user '{creds.username}'",
+        result="FAILED",
+        operator="ANONYMOUS"
+    )
+    raise HTTPException(
+        status_code=401,
+        detail="Invalid username or password"
+    )
+
+@router.post("/logout")
+def logout(operator: Optional[str] = Query("admin")):
+    """Records operator logout event in the audit trail."""
+    audit_logger.log_event(
+        event_type="LOGOUT",
+        details=f"Dashboard operator '{operator}' logged out",
+        result="SUCCESS",
+        operator=operator or "admin"
+    )
+    return {"success": True, "message": "Logged out successfully"}
+
 @router.get("/status")
 def get_system_status():
     """Returns comprehensive real-time status of the protection engine."""

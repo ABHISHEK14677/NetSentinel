@@ -16,12 +16,18 @@ netsentinel start
 netsentinel
 ```
 
+### 🔐 Dashboard Authentication
+The web console is secured with role-based operator authentication:
+* **URL:** `http://localhost:8000`
+* **Username:** `admin`
+* **Password:** `wasteoftime`
+
 ### All commands
 
 | Command | Description |
 |---|---|
 | `netsentinel` / `netsentinel start` | Start the server on port 8000 |
-| `netsentinel test` | Run the full pytest suite (26 tests) |
+| `netsentinel test` | Run the full pytest suite (27 tests) |
 | `netsentinel simulate <1–6>` | Inject synthetic threat traffic |
 | `netsentinel verify` | Verify SHA-256 audit chain integrity |
 | `netsentinel recover` | Emergency: flush all nftables rules |

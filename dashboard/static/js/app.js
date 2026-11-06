@@ -1,14 +1,51 @@
 // NetSentinel - Active Threat Protection Dashboard Logic
 
 let currentPendingModalUuid = null;
+let dashboardPollInterval = null;
 
 document.addEventListener("DOMContentLoaded", () => {
     initEventListeners();
-    fetchDashboardData();
-    setInterval(fetchDashboardData, 3000);
+    checkAuthState();
 });
 
+function checkAuthState() {
+    const token = sessionStorage.getItem("netsentinel_auth");
+    const loginScreen = document.getElementById("loginScreen");
+    const appContainer = document.getElementById("appContainer");
+    const userLabel = document.getElementById("currentLoggedUser");
+
+    if (token) {
+        if (loginScreen) loginScreen.style.display = "none";
+        if (appContainer) appContainer.style.display = "block";
+        if (userLabel) userLabel.innerText = sessionStorage.getItem("netsentinel_user") || "admin";
+
+        fetchDashboardData();
+        if (!dashboardPollInterval) {
+            dashboardPollInterval = setInterval(fetchDashboardData, 3000);
+        }
+    } else {
+        if (dashboardPollInterval) {
+            clearInterval(dashboardPollInterval);
+            dashboardPollInterval = null;
+        }
+        if (appContainer) appContainer.style.display = "none";
+        if (loginScreen) loginScreen.style.display = "flex";
+    }
+}
+
 function initEventListeners() {
+    // Operator Login Form
+    const loginForm = document.getElementById("loginForm");
+    if (loginForm) {
+        loginForm.addEventListener("submit", handleLoginSubmit);
+    }
+
+    // Operator Logout Button
+    const btnLogout = document.getElementById("btnLogout");
+    if (btnLogout) {
+        btnLogout.addEventListener("click", handleLogout);
+    }
+
     // Mode Switcher Buttons
     document.querySelectorAll(".mode-btn").forEach(btn => {
         btn.addEventListener("click", () => {
@@ -18,16 +55,81 @@ function initEventListeners() {
     });
 
     // Dry Run Toggle
-    document.getElementById("btnToggleDryRun").addEventListener("click", toggleDryRun);
+    const btnToggleDryRun = document.getElementById("btnToggleDryRun");
+    if (btnToggleDryRun) {
+        btnToggleDryRun.addEventListener("click", toggleDryRun);
+    }
 
     // Emergency Stop
-    document.getElementById("btnEmergencyStop").addEventListener("click", triggerEmergencyStop);
+    const btnEmergencyStop = document.getElementById("btnEmergencyStop");
+    if (btnEmergencyStop) {
+        btnEmergencyStop.addEventListener("click", triggerEmergencyStop);
+    }
 
     // Threat Simulation Form
-    document.getElementById("simulateThreatForm").addEventListener("submit", handleThreatSimulation);
+    const simForm = document.getElementById("simulateThreatForm");
+    if (simForm) {
+        simForm.addEventListener("submit", handleThreatSimulation);
+    }
 
     // Add Allowlist Prompt
-    document.getElementById("btnAddAllowlist").addEventListener("click", promptAddAllowlist);
+    const btnAddAllowlist = document.getElementById("btnAddAllowlist");
+    if (btnAddAllowlist) {
+        btnAddAllowlist.addEventListener("click", promptAddAllowlist);
+    }
+}
+
+async function handleLoginSubmit(e) {
+    e.preventDefault();
+    const usernameInput = document.getElementById("loginUsername");
+    const passwordInput = document.getElementById("loginPassword");
+    const alertBox = document.getElementById("loginAlert");
+    const submitBtn = document.getElementById("btnLoginSubmit");
+
+    const username = usernameInput.value.trim();
+    const password = passwordInput.value;
+
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Authenticating...';
+    alertBox.style.display = "none";
+
+    try {
+        const res = await fetch("/api/login", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ username, password })
+        });
+
+        const data = await res.json();
+        if (res.ok && data.success) {
+            sessionStorage.setItem("netsentinel_auth", data.token);
+            sessionStorage.setItem("netsentinel_user", data.username);
+            document.getElementById("loginForm").reset();
+            alertBox.style.display = "none";
+            checkAuthState();
+        } else {
+            alertBox.innerHTML = `<i class="fa-solid fa-circle-exclamation"></i> ${data.detail || "Invalid username or password"}`;
+            alertBox.style.display = "flex";
+        }
+    } catch (err) {
+        alertBox.innerHTML = '<i class="fa-solid fa-circle-exclamation"></i> Connection error. NetSentinel server is offline.';
+        alertBox.style.display = "flex";
+    } finally {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '<i class="fa-solid fa-right-to-bracket"></i> Authenticate & Enter';
+    }
+}
+
+async function handleLogout() {
+    const operator = sessionStorage.getItem("netsentinel_user") || "admin";
+    try {
+        await fetch(`/api/logout?operator=${encodeURIComponent(operator)}`, { method: "POST" });
+    } catch (e) {
+        console.warn("Logout notification failed:", e);
+    }
+    sessionStorage.removeItem("netsentinel_auth");
+    sessionStorage.removeItem("netsentinel_user");
+    checkAuthState();
 }
 
 async function fetchDashboardData() {

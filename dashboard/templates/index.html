@@ -8,31 +8,76 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
-    <!-- Top Navigation Bar -->
-    <header class="navbar">
-        <div class="nav-brand">
-            <i class="fa-solid fa-shield-halved brand-icon"></i>
-            <span class="brand-title">NetSentinel</span>
-            <span class="brand-badge">NIDS / NIPS Active Protection</span>
-        </div>
-        <div class="nav-center">
-            <div class="mode-indicator" id="currentModeBadge">
-                <span class="pulse-dot"></span>
-                <span id="currentModeText">MODE A: MONITOR ONLY</span>
+    <!-- Secure Operator Login Screen -->
+    <div id="loginScreen" class="login-wrapper">
+        <div class="login-box">
+            <div class="login-header">
+                <i class="fa-solid fa-shield-halved login-icon"></i>
+                <h2>NetSentinel</h2>
+                <p class="login-subtitle">Active Threat Protection & Response Console</p>
+                <div class="login-badge">
+                    <i class="fa-solid fa-lock"></i> SECURE ACCESS REQUIRED
+                </div>
             </div>
-            <div id="dryRunBadge" class="dry-run-badge badge-active">
-                <i class="fa-solid fa-flask"></i> DRY-RUN ACTIVE
+
+            <form id="loginForm" class="login-form">
+                <div id="loginAlert" class="login-alert" style="display: none;"></div>
+
+                <div class="form-group">
+                    <label for="loginUsername"><i class="fa-solid fa-user-shield"></i> Username</label>
+                    <input type="text" id="loginUsername" class="form-control" placeholder="Enter username" required autocomplete="username" autofocus>
+                </div>
+
+                <div class="form-group">
+                    <label for="loginPassword"><i class="fa-solid fa-key"></i> Password</label>
+                    <input type="password" id="loginPassword" class="form-control" placeholder="Enter password" required autocomplete="current-password">
+                </div>
+
+                <button type="submit" id="btnLoginSubmit" class="btn btn-primary btn-block btn-login">
+                    <i class="fa-solid fa-right-to-bracket"></i> Authenticate & Enter
+                </button>
+
+                <div class="login-footer">
+                    <span class="login-hint"><i class="fa-solid fa-shield-check"></i> Authorized Security Personnel Only</span>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Main Dashboard Application Container -->
+    <div id="appContainer" class="app-wrapper" style="display: none;">
+        <!-- Top Navigation Bar -->
+        <header class="navbar">
+            <div class="nav-brand">
+                <i class="fa-solid fa-shield-halved brand-icon"></i>
+                <span class="brand-title">NetSentinel</span>
+                <span class="brand-badge">NIDS / NIPS Active Protection</span>
             </div>
-        </div>
-        <div class="nav-controls">
-            <button id="btnToggleDryRun" class="btn btn-secondary">
-                <i class="fa-solid fa-toggle-on"></i> Toggle Dry-Run
-            </button>
-            <button id="btnEmergencyStop" class="btn btn-danger">
-                <i class="fa-solid fa-octagon-exclamation"></i> EMERGENCY STOP
-            </button>
-        </div>
-    </header>
+            <div class="nav-center">
+                <div class="mode-indicator" id="currentModeBadge">
+                    <span class="pulse-dot"></span>
+                    <span id="currentModeText">MODE A: MONITOR ONLY</span>
+                </div>
+                <div id="dryRunBadge" class="dry-run-badge badge-active">
+                    <i class="fa-solid fa-flask"></i> DRY-RUN ACTIVE
+                </div>
+            </div>
+            <div class="nav-controls">
+                <div class="user-pill">
+                    <i class="fa-solid fa-user-shield"></i>
+                    <span id="currentLoggedUser">admin</span>
+                </div>
+                <button id="btnToggleDryRun" class="btn btn-secondary">
+                    <i class="fa-solid fa-toggle-on"></i> Toggle Dry-Run
+                </button>
+                <button id="btnEmergencyStop" class="btn btn-danger">
+                    <i class="fa-solid fa-octagon-exclamation"></i> EMERGENCY STOP
+                </button>
+                <button id="btnLogout" class="btn btn-secondary btn-logout" title="Logout of NetSentinel">
+                    <i class="fa-solid fa-right-from-bracket"></i> Logout
+                </button>
+            </div>
+        </header>
 
     <!-- Main Container -->
     <div class="main-layout">
@@ -285,6 +330,7 @@
             </div>
         </div>
     </div>
+    </div> <!-- /#appContainer -->
 
     <script src="/static/js/app.js"></script>
 </body>

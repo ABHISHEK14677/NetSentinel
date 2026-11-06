@@ -358,3 +358,30 @@ def test_15_failed_enforcement_never_reported_as_successful():
         assert res["outcome_status"] == "ENFORCEMENT_FAILED"
     finally:
         linux_firewall.apply_temporary_block = orig_apply
+
+# ------------------------------------------------------------------------------
+# Test 16: Operator login and authentication validation
+# ------------------------------------------------------------------------------
+def test_16_operator_login_authentication():
+    from fastapi.testclient import TestClient
+    from main import app
+
+    client = TestClient(app)
+
+    # Valid credentials
+    res = client.post("/api/login", json={"username": "admin", "password": "wasteoftime"})
+    assert res.status_code == 200
+    data = res.json()
+    assert data["success"] is True
+    assert data["username"] == "admin"
+    assert "token" in data
+
+    # Invalid credentials
+    res_bad = client.post("/api/login", json={"username": "admin", "password": "wrong"})
+    assert res_bad.status_code == 401
+    assert "Invalid username" in res_bad.json()["detail"]
+
+    # Logout
+    res_out = client.post("/api/logout?operator=admin")
+    assert res_out.status_code == 200
+    assert res_out.json()["success"] is True
